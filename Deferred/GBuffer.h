@@ -43,7 +43,9 @@ public:
 	static void closeGBufferAndDepth(GLuint attachments[], GLuint *depth, glm::vec2 size);
 
 	static void sendTexture(Shader shader, std::string name, GLuint texture, int TEXTURE_GL, int unit);
-	static void sendDataToGPU(GLuint vao, GLuint vbo, Vertex *data, int numVertices);
+	static void sendDataToGPU(Vertex *data, int numVertices);
+	static void bindVertexArrayBindBuffer(GLuint vao, GLuint vbo);
+	static void unbindVertexUnbindBuffer();
 
 	static void sendUniform(Shader shader, std::string name, glm::vec3 vec3);
 	static void sendUniform(Shader shader, std::string name, glm::mat4 value);

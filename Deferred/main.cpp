@@ -39,7 +39,9 @@ struct Quad {
 	}
 
 	void draw() {
-		GBuffer::sendDataToGPU(deferredVAO, deferredVBO, object.mesh, object.numVertices);
+		GBuffer::bindVertexArrayBindBuffer(deferredVAO, deferredVBO);
+		GBuffer::sendDataToGPU(object.mesh, object.numVertices);
+		GBuffer::unbindVertexUnbindBuffer();
 	}
 	
 } quad;
@@ -170,16 +172,17 @@ void sendObject(Vertex * data, GameObject object, int numVertices) {
 	GBuffer::sendUniform(shaderGBuffer, "modelMatrix", modelMatrix);
 	GBuffer::sendUniform(shaderGBuffer, "modelNormalMatrix", normalMatrix);
 
-	GBuffer::sendDataToGPU(gBVAO, gBVBO, data, numVertices);
+	GBuffer::sendDataToGPU(data, numVertices);
 }
 
 void renderScene() {
 
+	GBuffer::bindVertexArrayBindBuffer(gBVAO, gBVBO);
+
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
 	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getTerrain().getMaterial().textureMap, GL_TEXTURE0, 0);
 	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
-	GBuffer::unbindTextures();
-
+	
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(1.0f));
 	for (DecorObjects decor : scene->listObjects) {
 
@@ -187,12 +190,13 @@ void renderScene() {
 		if (decor.e->getMaterial().specularMap != -1) {
 			GBuffer::sendTexture(shaderGBuffer, "specularMap", decor.e->getMaterial().specularMap, GL_TEXTURE1, 1);
 		}
-		for (GameObject gameObject : decor.g) {
 
-			sendObject(decor.e->getMesh(), gameObject, decor.e->getNumVertices());
-		}
+		sendObject(decor.e->getMesh(), decor.g.at(0), decor.e->getNumVertices());
+		
 		GBuffer::unbindTextures();
 	}
+
+	GBuffer::unbindVertexUnbindBuffer();
 }
 
 int main(int argc, char** argv) {
@@ -259,7 +263,7 @@ int main(int argc, char** argv) {
 		// send camera to opengl
 		GBuffer::sendUniform(shaderGBuffer, "viewMatrix", camera.getViewMatrix());
 		GBuffer::sendUniform(shaderGBuffer, "projectionMatrix", camera.getProjectionCamera());
-		
+
 		// Send objects
 		renderScene();
 
@@ -268,7 +272,6 @@ int main(int argc, char** argv) {
 		GBuffer::unuse(shaderGBuffer);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		GBuffer::unbindTextures();
 
 		// Deferred Pass
 		GBuffer::use(shaderPBR);

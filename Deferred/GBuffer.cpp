@@ -163,24 +163,28 @@ void GBuffer::closeGBufferAndDepth(GLuint attachments[], GLuint *depth, glm::vec
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GBuffer::sendDataToGPU(GLuint vao, GLuint vbo, Vertex* data, int numVertices) {
-	glBindVertexArray(vao);
-
-	//Bind the vertex buffer object
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
+void GBuffer::sendDataToGPU(Vertex* data, int numVertices) {
 	// Put all the vertices into the VBO
 	glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(Vertex), data, GL_STATIC_DRAW);
 
 	//Draw a set of elements(numVertices) from the VBO as GL_TRIANGLES. The first vertex is in the 0th position
 	glDrawArrays(GL_TRIANGLES, 0, numVertices);
 
+}
+
+void GBuffer::bindVertexArrayBindBuffer(GLuint vao, GLuint vbo) {
+	glBindVertexArray(vao);
+
+	//Bind the vertex buffer object
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+}
+
+void GBuffer::unbindVertexUnbindBuffer() {
+
 	//Unbind the VBO and VAO
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
-
-
 /* Shader */
 void GBuffer::sendUniform(Shader shader, std::string name, glm::vec3 value) {
 	glUniform3fv(glGetUniformLocation(shader.programID, name.c_str()), 1, glm::value_ptr(value));

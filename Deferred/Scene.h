@@ -17,6 +17,7 @@ private:
 	Entity sSkybox;
 	Entity sTerrain;
 
+	/* Variable deprecated, using DecorObjects for render */
 	vector<Entity> sDecoration;
 
 	vector<Light> sLights;
