@@ -3,8 +3,8 @@
 Camera::Camera():
 	cAspectRatio(1),
 	cFOV(45.0f),
-	cFar(8000.0f),
-	cNear(1.5f),
+	cFar(2001.0f),
+	cNear(1.0f),
 	cProjectionWidth(15.0f),
 	cProjectionHeight(15.0f),
 	cCameraPos(0.0f, 100.0f, 140.0f),
