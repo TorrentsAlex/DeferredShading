@@ -31,6 +31,10 @@ void Entity::setGameObject(GameObject gameObject) {
 	eGameObject = gameObject;
 }
 
+void Entity::setId(string name) {
+	id = name;
+}
+
 
 // Entity transformations
 void Entity::setPosition(glm::vec3 newPos) {

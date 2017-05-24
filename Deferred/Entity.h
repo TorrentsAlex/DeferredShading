@@ -37,7 +37,7 @@ public:
 	// Setters
 	void setOBJ(OBJ mesh);
 	void setGameObject(GameObject gameObject);
-
+	void setId(string name);
 	void setTextureId(GLuint textureId);
 	void setTextureSpecular(GLuint specularId);
 
