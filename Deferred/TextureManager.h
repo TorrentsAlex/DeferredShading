@@ -36,6 +36,7 @@ private:
 
 
 	GLuint loadTexture(std::string filePath);
+	GLuint loadTexture3D(std::string filePath);
 	std::vector <GLTexture> _textureData;
 	std::vector <std::string> _listOfTextures;
 };

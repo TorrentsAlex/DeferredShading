@@ -42,6 +42,8 @@ GLuint lihgtingBuffer, buffALBEDO, buffLUMINANCE;
 GLuint bloomBuffer[2];
 GLuint buffBLOOM[2];
 
+void moveCameraWithKeyboard();
+
 struct Quad {
 	OBJ object;
 	Quad() {
@@ -108,6 +110,24 @@ void initializeVAOVBO() {
 			GBuffer::closeGBufferAndDepth(2, attachLighting, &depthBuffer, screenSize);
 		}
 
+		// Bloom stack
+		{
+			// Horitzonal blur
+			GBuffer::initFrameBuffer(&bloomBuffer[0]);
+			GBuffer::genTexture(&buffBLOOM[0], GL_COLOR_ATTACHMENT0, screenSize);
+
+			GLuint attachmentsH[1] = { GL_COLOR_ATTACHMENT0 };
+
+			GBuffer::closeGBufferAndDepth(1, attachmentsH, &depthBuffer, screenSize);
+			
+			// Vertical Blur
+			GBuffer::initFrameBuffer(&bloomBuffer[1]);
+			GBuffer::genTexture(&buffBLOOM[1], GL_COLOR_ATTACHMENT0, screenSize);
+			GLuint attachmentsV[1] = { GL_COLOR_ATTACHMENT0 };
+
+			GBuffer::closeGBufferAndDepth(1, attachmentsV, &depthBuffer, screenSize);
+		}
+
 		glGenVertexArrays(1, &deferredVAO);
 		glGenBuffers(1, &deferredVBO);
 
@@ -134,66 +154,58 @@ void initializeVAOVBO() {
 	}
 
 
-
-	// Bloom stack
-	{
-		GBuffer::initFrameBuffer(&bloomBuffer[0]);
-		GBuffer::genTexture(&buffBLOOM[0], GL_COLOR_ATTACHMENT0, screenSize);
-
-		GLuint attachments[1] = { GL_COLOR_ATTACHMENT0};
-
-		GBuffer::closeGBufferAndDepth(1, attachments, &depthBuffer, screenSize);
-
-		//
-
-		/*GBuffer::initFrameBuffer(&bloomBuffer[1]);
-		GBuffer::genTexture(&buffBLOOM[1], GL_COLOR_ATTACHMENT0, screenSize);
-
-		GLuint attachmentsH[1] = { GL_COLOR_ATTACHMENT0};
-
-		GBuffer::closeGBufferAndDepth(1, attachmentsH, &depthBuffer, screenSize);*/
-	}
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void recompileShaders() {
-	std::cout << "recompiling shaders..." << std::endl;
-	shaderPBR = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/pbr.fshader");
+void compileShaders() {
+	std::cout << "compiling shaders" << std::endl;
+	// Create GBuffer Shader
+	{
+		shaderGBuffer = GBuffer::createShader("../resources/shaders/gbuffer.vshader", "../resources/shaders/gbuffer.fshader");
 
-	GBuffer::addAttribute(shaderPBR, "vertPosition");
-	GBuffer::addAttribute(shaderPBR, "vertNormal");
-	GBuffer::addAttribute(shaderPBR, "vertUV");
+		// AttRibutes
+		GBuffer::addAttribute(shaderGBuffer, "vertPosition");
+		GBuffer::addAttribute(shaderGBuffer, "vertNormal");
+		GBuffer::addAttribute(shaderGBuffer, "vertUV");
 
-	GBuffer::linkShaders(shaderPBR);
+		GBuffer::linkShaders(shaderGBuffer);
+	}
+	// Create Deferred Shader
 
-}
+	{
+		shaderPBR = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/pbr.fshader");
 
-void moveCameraWithKeyboard() {
-	// Rotate the camera with mouse
-	if (InputManager::Instance().mousePressed()) {
-		camera.rotate(InputManager::Instance().getMouseCoords());
+		GBuffer::addAttribute(shaderPBR, "vertPosition");
+		GBuffer::addAttribute(shaderPBR, "vertNormal");
+		GBuffer::addAttribute(shaderPBR, "vertUV");
+
+		GBuffer::linkShaders(shaderPBR);
+	}
+	// Create postProcess
+	{
+		shaderBlur = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/blur.fshader");
+
+		GBuffer::addAttribute(shaderBlur, "vertPosition");
+		GBuffer::addAttribute(shaderBlur, "vertNormal");
+		GBuffer::addAttribute(shaderBlur, "vertUV");
+
+		GBuffer::linkShaders(shaderBlur);
+
 	}
 
-	if (InputManager::Instance().isKeyDown(SDLK_q)) {
-		camera.moveTo(CameraMove::up);
+	// Final Stack accumulation
+	{
+		shaderFinal = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/shader.fshader");
+
+		GBuffer::addAttribute(shaderFinal, "vertPosition");
+		GBuffer::addAttribute(shaderFinal, "vertNormal");
+		GBuffer::addAttribute(shaderFinal, "vertUV");
+
+		GBuffer::linkShaders(shaderFinal);
+
 	}
-	if (InputManager::Instance().isKeyDown(SDLK_e)) {
-		camera.moveTo(CameraMove::down);
-	}
-	if (InputManager::Instance().isKeyDown(SDLK_w)) {
-		camera.moveTo(CameraMove::forward);
-	}
-	if (InputManager::Instance().isKeyDown(SDLK_s)) {
-		camera.moveTo(CameraMove::backwards);
-	}
-	if (InputManager::Instance().isKeyDown(SDLK_a)) {
-		camera.moveTo(CameraMove::left);
-	}
-	if (InputManager::Instance().isKeyDown(SDLK_d)) {
-		camera.moveTo(CameraMove::right);
-	}
+
 }
 
 
@@ -224,6 +236,9 @@ void renderScene() {
 	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
 	
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(1.0f));
+
+	//GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getSkyBox().getMaterial().textureMap, GL_TEXTURE0, 0);
+	//sendObject(scene->getSkyBox().getMesh(), scene->getSkyBox().getGameObject(), scene->getSkyBox().getNumVertices());
 	for (DecorObjects decor : scene->listObjects) {
 
 		GBuffer::sendTexture(shaderGBuffer, "textureData", decor.e->getMaterial().textureMap, GL_TEXTURE0, 0);
@@ -253,58 +268,14 @@ int main(int argc, char** argv) {
 	camera.setPerspectiveCamera();
 	camera.setViewMatrix();
 	
-	// Create GBuffer Shader
-	{
-		shaderGBuffer = GBuffer::createShader("../resources/shaders/gbuffer.vshader", "../resources/shaders/gbuffer.fshader");
-
-		// AttRibutes
-		GBuffer::addAttribute(shaderGBuffer, "vertPosition");
-		GBuffer::addAttribute(shaderGBuffer, "vertNormal");
-		GBuffer::addAttribute(shaderGBuffer, "vertUV");
-
-		GBuffer::linkShaders(shaderGBuffer);
-	}
-	// Create Deferred Shader
-	
-	{
-		shaderPBR = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/pbr.fshader");
-
-		GBuffer::addAttribute(shaderPBR, "vertPosition");
-		GBuffer::addAttribute(shaderPBR, "vertNormal");
-		GBuffer::addAttribute(shaderPBR, "vertUV");
-
-		GBuffer::linkShaders(shaderPBR);
-	}
-	// Create postProcess
-	{		
-		shaderBlur = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/blur.fshader");
-
-		GBuffer::addAttribute(shaderBlur, "vertPosition");
-		GBuffer::addAttribute(shaderBlur, "vertNormal");
-		GBuffer::addAttribute(shaderBlur, "vertUV");
-
-		GBuffer::linkShaders(shaderBlur);
-
-	}
-
-	// Final Stack accumulation
-	{
-		shaderFinal = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/shader.fshader");
-
-		GBuffer::addAttribute(shaderFinal, "vertPosition");
-		GBuffer::addAttribute(shaderFinal, "vertNormal");
-		GBuffer::addAttribute(shaderFinal, "vertUV");
-
-		GBuffer::linkShaders(shaderFinal);
-
-	}
+	compileShaders();
 	initializeVAOVBO();
 
 
 	// Init scene
 	scene = new Scene();
 	SceneCreator::Instance().createScene("../resources/scenes/scene_deferred.json", *scene);
-	glClearColor(0.2, 0.2, 0.3, 1.0);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
 
@@ -315,7 +286,7 @@ int main(int argc, char** argv) {
 		// UPDATE
 		// Handle inputs
 		if (InputManager::Instance().isKeyDown(SDLK_t)) {
-			recompileShaders();
+			compileShaders();
 		}
 		if (InputManager::Instance().handleInput() == -1) {
 			isOpen = false;
@@ -360,14 +331,14 @@ int main(int argc, char** argv) {
 			GBuffer::unuse(shaderPBR);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
-		// Post Proces stack
+		// Bloom 
 		{
 			GBuffer::use(shaderBlur);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			for (int i = 0; i < 2; i++) {
-				glBindFramebuffer(GL_FRAMEBUFFER, bloomBuffer[0]);
-				
+				glBindFramebuffer(GL_FRAMEBUFFER, bloomBuffer[i]);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 				if (i == 0) {
 					GBuffer::sendTexture(shaderBlur, "gLuminance", buffLUMINANCE, GL_TEXTURE0, 0);
 				} else {
@@ -382,20 +353,47 @@ int main(int argc, char** argv) {
 			GBuffer::unuse(shaderBlur);
 		}
 		// Final stack
+		{
+			GBuffer::use(shaderFinal);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		GBuffer::use(shaderFinal);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			GBuffer::sendTexture(shaderFinal, "gAlbedo", buffALBEDO, GL_TEXTURE0, 0);
+			GBuffer::sendTexture(shaderFinal, "gBloom", buffBLOOM[1], GL_TEXTURE1, 1);
+			quad.draw();
 
-		GBuffer::sendTexture(shaderFinal, "gAlbedo", buffALBEDO, GL_TEXTURE0, 0);
-		GBuffer::sendTexture(shaderFinal, "gBloom", buffBLOOM[0], GL_TEXTURE1, 1);
-		quad.draw();
-
-		GBuffer::unuse(shaderFinal);
-
+			GBuffer::unuse(shaderFinal);
+		}
 		window.swapBuffer();
 	}
 
 	delete scene;
 
 	return 1;
+}
+
+
+void moveCameraWithKeyboard() {
+	// Rotate the camera with mouse
+	if (InputManager::Instance().mousePressed()) {
+		camera.rotate(InputManager::Instance().getMouseCoords());
+	}
+
+	if (InputManager::Instance().isKeyDown(SDLK_q)) {
+		camera.moveTo(CameraMove::up);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_e)) {
+		camera.moveTo(CameraMove::down);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_w)) {
+		camera.moveTo(CameraMove::forward);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_s)) {
+		camera.moveTo(CameraMove::backwards);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_a)) {
+		camera.moveTo(CameraMove::left);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_d)) {
+		camera.moveTo(CameraMove::right);
+	}
 }
