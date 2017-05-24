@@ -10,7 +10,6 @@
 			"name" : "teapot",
 			"object" : "../resources/objects/teapot.obj",
 			"texture" : "../resources/images/cup.jpg",
-			"specularMap" : "../resources/images/red.png",
 			"position": {
 				"x" : -40,
 				"y" : 0,

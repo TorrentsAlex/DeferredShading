@@ -1,21 +1,21 @@
 #version 330
 
-const float offset[3] = float[](0.0, 1.3846153846, 3.2307692308);
+const float offset[3] = float[](0.0, 0.0003846153846, 0.002307692308);
 const float weight[3] = float[](0.2270270270, 0.3162162162, 0.0702702703);
 
 in vec2 fragUV;
 
-uniform sampler2D image;
+uniform sampler2D gLuminance;
+
 uniform int blurType;
 
 out vec4 finalColor;
 
-
 vec4 horitzontalBlur() {
   vec4 color = vec4(0.0f);
   for(int i = 0; i < 3; i++) {
-    color += texture(image, fragUV + vec2(offset[i], 0.0)) * weight[i];
-    color += texture(image, fragUV - vec2(offset[i], 0.0)) * weight[i];
+    color += texture(gLuminance, fragUV + vec2(offset[i], 0.0)) * weight[i];
+    color += texture(gLuminance, fragUV - vec2(offset[i], 0.0)) * weight[i];
   }
   return color;
 }
@@ -23,8 +23,8 @@ vec4 horitzontalBlur() {
 vec4 verticalBlur() {
   vec4 color = vec4(0.0f);
   for(int i = 0; i < 3; i++) {
-    color += texture(image, fragUV + vec2(0.0, offset[i])) * weight[i];
-    color += texture(image, fragUV - vec2(0.0, offset[i])) * weight[i];
+    color += texture(gLuminance, fragUV + vec2(0.0, offset[i])) * weight[i];
+    color += texture(gLuminance, fragUV - vec2(0.0, offset[i])) * weight[i];
   }
   return color;
 }
@@ -32,11 +32,11 @@ vec4 verticalBlur() {
 //vec4 blur() {}
 
 void main() {
-  finalColor = texture(image, fragUV);
-
-  if (blurType == 0) {
+  finalColor = texture(gLuminance, fragUV);
+  
+   if (blurType == 0) {
     finalColor = horitzontalBlur();
-  } else {
-    finalColor = verticalBlur();
-  }
+   } else {
+     finalColor = verticalBlur();
+   }
 }
