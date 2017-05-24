@@ -1,5 +1,6 @@
 {
 	"terrain": {
+		"name" : "terrain",
 		"object": "../resources/objects/plane.obj",
 		"texture": "../resources/images/floor.jpg",
 		"material" : "../resources/materials/metal.json"
@@ -30,7 +31,7 @@
 			"material" : "../resources/materials/metal.json"
 		},
 		{
-			"name" : "torus",
+			"name" : "sphere",
 			"object" : "../resources/objects/sphere.obj",
 			"texture" : "../resources/images/beer_color.png",
 			"position": {

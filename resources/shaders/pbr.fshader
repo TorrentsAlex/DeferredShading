@@ -14,8 +14,8 @@ out vec4 fragColor;
 const float PI = 3.1415926536;
 
 // pass for uniforms
-//const float roughness = 0.5;
-//const float metalness = 0.5;
+const float roughness = 0.5;
+const float metalness = 0.5;
 
 /* Schlick */
 vec3 fresnel(float VdotH, vec3 c) {
@@ -23,7 +23,7 @@ vec3 fresnel(float VdotH, vec3 c) {
 }
 
 float dBeckmann(float NdotH) {
-	float roughness = texture(gDiff, fragUV).a;
+	//float roughness = texture(gDiff, fragUV).a;
 	float a2 = pow(roughness, 4);
 	float nd = NdotH * NdotH;
 
@@ -46,15 +46,15 @@ vec3 lambert(float NdotL, vec3 matDiffuse) {
 }
 
 vec4 calcColor() {
-	float roughness = texture(gDiff, fragUV).a;
-	float metalness = texture(gPos, fragUV).a;
+	//float roughness = texture(gDiff, fragUV).a;
+	//float metalness = texture(gPos, fragUV).a;
 
 	vec4 color = vec4(0.0);
 
-	vec3 ligthPos = vec3(0.0, 50.0, 00.0);
+	vec3 ligthPos = vec3(42.0, 44.0, 22.0);
 	vec3 worldPos = texture(gPos, fragUV).rgb;
 
-	vec3 L = normalize(vec3(0.75, 1.0, 0.0));//normalize(ligthPos - worldPos);
+	vec3 L = normalize(ligthPos - worldPos);
 	vec3 V = normalize(viewerPosition - worldPos);
 	vec3 H = normalize(L + V);
 	vec3 N = normalize(texture(gNorm, fragUV).xyz);
@@ -73,18 +73,19 @@ vec4 calcColor() {
 	// ambient color + PBR
 	vec3 nom = fresnel(VdotH, c) *
 						 dBeckmann(NdotH) *
-						 gCookTorrance(NdotV, VdotH, NdotH);
+						 gCookTorrance(NdotV, VdotH, NdotH) * 0.05;
 
 	vec3 specular = ((1.0 - metalness) + metalness * albedo.rgb) * (nom / 4.0 * NdotV * NdotL);
 
 	float dist = length(ligthPos - worldPos);
-	float attenuation = 1000.0 / (dist * dist);
-	color.rgb = vec3(0.15,0.15,0.3) * (diffuse + specular);
+	float attenuation = 3000.0 / (dist * dist);
 
-	color.rgb /= 1.0;
+	color.rgb = vec3(0.3,0.15,0.0) * (diffuse + specular) * attenuation;
+
+	color.rgb /= 1.0; //Knum lights
 	color.rgb += vec3(0.05) * albedo.rgb;
 
-	return vec4(albedo.rgb, 1.0);
+	return vec4(color.rgb, 1.0);
 }
 
 void main() {
