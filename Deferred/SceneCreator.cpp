@@ -109,6 +109,8 @@ void SceneCreator::populateDecoration(Scene * scene, Json::Value decoration) {
 		e->setOBJ(objDecoration);
 		e->setMaterial(metalMaterial);
 		e->setTextureId(textureDecoration);
+
+		e->setId(currentDecoration["name"].asString());
 		DecorObjects d;
 		d.e = e;
 
@@ -118,21 +120,18 @@ void SceneCreator::populateDecoration(Scene * scene, Json::Value decoration) {
 			e->setTextureSpecular(specular);
 		}
 
-		// Theres nothin into elements
-		if (gameElements.compare("") == 0) {
-			GameObject gameObject;
-			gameObject.translate = glm::vec3(currentDecoration["position"]["x"].asFloat(), currentDecoration["position"]["y"].asFloat(), currentDecoration["position"]["z"].asFloat());;
+		GameObject gameObject;
+		gameObject.translate = glm::vec3(currentDecoration["position"]["x"].asFloat(), 
+										currentDecoration["position"]["y"].asFloat(), 
+										currentDecoration["position"]["z"].asFloat());;
 
-			gameObject.scale = glm::vec3(1, 1, 1);
-			gameObject.angle = 0;
+		gameObject.scale = glm::vec3(1.0f);
+		gameObject.angle = 0;
 
-			std::vector<GameObject> gameObjects;
-			gameObjects.push_back(gameObject);
-			d.g.push_back(gameObject);
+		std::vector<GameObject> gameObjects;
+		gameObjects.push_back(gameObject);
+		d.g.push_back(gameObject);
 
-			scene->listObjects.push_back(d);
-
-		}
 		scene->listObjects.push_back(d);
 	}
 }
@@ -145,5 +144,5 @@ void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 	OBJ objTerrain = Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString());
 	GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
 
-	scene->setTerrain(objTerrain, textureTerrain, metalMaterial	);
+	scene->setTerrain(objTerrain, textureTerrain, metalMaterial);
 }
