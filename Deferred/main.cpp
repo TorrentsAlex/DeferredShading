@@ -23,14 +23,24 @@ Window window;
 Shader shaderGBuffer;
 Shader shaderPBR;
 Shader shaderBlur;
+Shader shaderFinal;
 
 Scene *scene;
 
 GLuint deferredVAO , deferredVBO;
 GLuint gBVAO, gBVBO;
 GLuint frameBuffer;
-GLuint buffNOR, buffDIF, buffPOS;
+GLuint buffNOR, buffDIF, buffPOS, buffSPEC;
 GLuint depthBuffer;
+
+
+// Lighting Pass
+GLuint lihgtingBuffer, buffALBEDO, buffLUMINANCE;
+
+
+// Final stack pass
+GLuint bloomBuffer[2];
+GLuint buffBLOOM[2];
 
 struct Quad {
 	OBJ object;
@@ -77,17 +87,26 @@ void initializeVAOVBO() {
 	
 	// Deferred VAO VBO
 	{
-		//glGenVertexArrays(1, &deferredVAO);
 		GBuffer::initFrameBuffer(&frameBuffer);
 		GBuffer::genTexture(&buffDIF, GL_COLOR_ATTACHMENT0, screenSize);
 		GBuffer::genTexture(&buffNOR, GL_COLOR_ATTACHMENT1, screenSize);
 		GBuffer::genTexture(&buffPOS, GL_COLOR_ATTACHMENT2, screenSize);
+		GBuffer::genTexture(&buffSPEC, GL_COLOR_ATTACHMENT3, screenSize);
 
-		GLuint attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+		GLuint attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
 
-		GBuffer::closeGBufferAndDepth(attachments, &depthBuffer, screenSize);
+		GBuffer::closeGBufferAndDepth(4, attachments, &depthBuffer, screenSize);
 
-		//glBindVertexArray(0);
+		// LightingPass 
+		{
+			GBuffer::initFrameBuffer(&lihgtingBuffer);
+			GBuffer::genTexture(&buffALBEDO, GL_COLOR_ATTACHMENT0, screenSize);
+			GBuffer::genTexture(&buffLUMINANCE, GL_COLOR_ATTACHMENT1, screenSize);
+
+			GLuint attachLighting[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+
+			GBuffer::closeGBufferAndDepth(2, attachLighting, &depthBuffer, screenSize);
+		}
 
 		glGenVertexArrays(1, &deferredVAO);
 		glGenBuffers(1, &deferredVBO);
@@ -114,13 +133,34 @@ void initializeVAOVBO() {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
+
+
+	// Bloom stack
+	{
+		GBuffer::initFrameBuffer(&bloomBuffer[0]);
+		GBuffer::genTexture(&buffBLOOM[0], GL_COLOR_ATTACHMENT0, screenSize);
+
+		GLuint attachments[1] = { GL_COLOR_ATTACHMENT0};
+
+		GBuffer::closeGBufferAndDepth(1, attachments, &depthBuffer, screenSize);
+
+		//
+
+		/*GBuffer::initFrameBuffer(&bloomBuffer[1]);
+		GBuffer::genTexture(&buffBLOOM[1], GL_COLOR_ATTACHMENT0, screenSize);
+
+		GLuint attachmentsH[1] = { GL_COLOR_ATTACHMENT0};
+
+		GBuffer::closeGBufferAndDepth(1, attachmentsH, &depthBuffer, screenSize);*/
+	}
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void recompileShaders() {
 	std::cout << "recompiling shaders..." << std::endl;
-	shaderPBR = GBuffer::createShader("../resources/shaders/pbr.vshader", "../resources/shaders/pbr.fshader");
+	shaderPBR = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/pbr.fshader");
 
 	GBuffer::addAttribute(shaderPBR, "vertPosition");
 	GBuffer::addAttribute(shaderPBR, "vertNormal");
@@ -189,6 +229,9 @@ void renderScene() {
 		GBuffer::sendTexture(shaderGBuffer, "textureData", decor.e->getMaterial().textureMap, GL_TEXTURE0, 0);
 		if (decor.e->getMaterial().specularMap != -1) {
 			GBuffer::sendTexture(shaderGBuffer, "specularMap", decor.e->getMaterial().specularMap, GL_TEXTURE1, 1);
+			GBuffer::sendUniform(shaderGBuffer, "haveSpecularMap", true);
+		} else {
+			GBuffer::sendUniform(shaderGBuffer, "haveSpecularMap", false);
 		}
 
 		sendObject(decor.e->getMesh(), decor.g.at(0), decor.e->getNumVertices());
@@ -211,23 +254,50 @@ int main(int argc, char** argv) {
 	camera.setViewMatrix();
 	
 	// Create GBuffer Shader
-	shaderGBuffer = GBuffer::createShader("../resources/shaders/gbuffer.vshader", "../resources/shaders/gbuffer.fshader");
+	{
+		shaderGBuffer = GBuffer::createShader("../resources/shaders/gbuffer.vshader", "../resources/shaders/gbuffer.fshader");
 
-	// AttRibutes
-	GBuffer::addAttribute(shaderGBuffer, "vertPosition");
-	GBuffer::addAttribute(shaderGBuffer, "vertNormal");
-	GBuffer::addAttribute(shaderGBuffer, "vertUV");
+		// AttRibutes
+		GBuffer::addAttribute(shaderGBuffer, "vertPosition");
+		GBuffer::addAttribute(shaderGBuffer, "vertNormal");
+		GBuffer::addAttribute(shaderGBuffer, "vertUV");
 
-	GBuffer::linkShaders(shaderGBuffer);
+		GBuffer::linkShaders(shaderGBuffer);
+	}
 	// Create Deferred Shader
-	shaderPBR = GBuffer::createShader("../resources/shaders/pbr.vshader", "../resources/shaders/pbr.fshader");
+	
+	{
+		shaderPBR = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/pbr.fshader");
 
-	GBuffer::addAttribute(shaderPBR, "vertPosition");
-	GBuffer::addAttribute(shaderPBR, "vertNormal");
-	GBuffer::addAttribute(shaderPBR, "vertUV");
+		GBuffer::addAttribute(shaderPBR, "vertPosition");
+		GBuffer::addAttribute(shaderPBR, "vertNormal");
+		GBuffer::addAttribute(shaderPBR, "vertUV");
 
-	GBuffer::linkShaders(shaderPBR);
+		GBuffer::linkShaders(shaderPBR);
+	}
+	// Create postProcess
+	{		
+		shaderBlur = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/blur.fshader");
 
+		GBuffer::addAttribute(shaderBlur, "vertPosition");
+		GBuffer::addAttribute(shaderBlur, "vertNormal");
+		GBuffer::addAttribute(shaderBlur, "vertUV");
+
+		GBuffer::linkShaders(shaderBlur);
+
+	}
+
+	// Final Stack accumulation
+	{
+		shaderFinal = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/shader.fshader");
+
+		GBuffer::addAttribute(shaderFinal, "vertPosition");
+		GBuffer::addAttribute(shaderFinal, "vertNormal");
+		GBuffer::addAttribute(shaderFinal, "vertUV");
+
+		GBuffer::linkShaders(shaderFinal);
+
+	}
 	initializeVAOVBO();
 
 
@@ -252,39 +322,75 @@ int main(int argc, char** argv) {
 		}
 		moveCameraWithKeyboard();
 
-		// RENDER
-		// Frame buffer for GBuffer
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+		// Geometry pass
+		{
+			// Frame buffer for GBuffer
+			glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			// GBuffer Pass
+			GBuffer::use(shaderGBuffer);
+
+			// send camera to opengl
+			GBuffer::sendUniform(shaderGBuffer, "viewMatrix", camera.getViewMatrix());
+			GBuffer::sendUniform(shaderGBuffer, "projectionMatrix", camera.getProjectionCamera());
+
+			// Send objects
+			renderScene();
+
+			// Unbind an unuse programs
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			GBuffer::unuse(shaderGBuffer);
+		}
+		// Lighting pass
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, lihgtingBuffer);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			// Deferred Pass
+			GBuffer::use(shaderPBR);
+
+			GBuffer::sendUniform(shaderPBR, "viewerPosition", camera.getPosition());
+			GBuffer::sendTexture(shaderPBR, "gDiff", buffDIF, GL_TEXTURE0, 0);
+			GBuffer::sendTexture(shaderPBR, "gNorm", buffNOR, GL_TEXTURE1, 1);
+			GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
+			GBuffer::sendTexture(shaderPBR, "gSpec", buffSPEC, GL_TEXTURE3, 3);
+
+			quad.draw();
+			GBuffer::unuse(shaderPBR);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+		// Post Proces stack
+		{
+			GBuffer::use(shaderBlur);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			for (int i = 0; i < 2; i++) {
+				glBindFramebuffer(GL_FRAMEBUFFER, bloomBuffer[0]);
+				
+				if (i == 0) {
+					GBuffer::sendTexture(shaderBlur, "gLuminance", buffLUMINANCE, GL_TEXTURE0, 0);
+				} else {
+					GBuffer::sendTexture(shaderBlur, "gLuminance", buffBLOOM[0], GL_TEXTURE0, 0);
+				}
+					
+				GBuffer::sendUniform(shaderBlur, "blurType", i);
+
+				quad.draw();
+			}
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			GBuffer::unuse(shaderBlur);
+		}
+		// Final stack
+
+		GBuffer::use(shaderFinal);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// GBuffer Pass
-		GBuffer::use(shaderGBuffer);
-
-		// send camera to opengl
-		GBuffer::sendUniform(shaderGBuffer, "viewMatrix", camera.getViewMatrix());
-		GBuffer::sendUniform(shaderGBuffer, "projectionMatrix", camera.getProjectionCamera());
-
-		// Send objects
-		renderScene();
-
-		// Unbind an unuse programs
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		GBuffer::unuse(shaderGBuffer);
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// Deferred Pass
-		GBuffer::use(shaderPBR);
-
-		GBuffer::sendUniform(shaderPBR, "viewerPosition", camera.getPosition());
-		GBuffer::sendTexture(shaderPBR, "gDiff", buffDIF, GL_TEXTURE0, 0);
-		GBuffer::sendTexture(shaderPBR, "gNorm", buffNOR, GL_TEXTURE1, 1);
-		GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
-
+		GBuffer::sendTexture(shaderFinal, "gAlbedo", buffALBEDO, GL_TEXTURE0, 0);
+		GBuffer::sendTexture(shaderFinal, "gBloom", buffBLOOM[0], GL_TEXTURE1, 1);
 		quad.draw();
 
-		//// Send all ligths
-		GBuffer::unuse(shaderPBR);
+		GBuffer::unuse(shaderFinal);
 
 		window.swapBuffer();
 	}

@@ -142,13 +142,13 @@ void GBuffer::genTexture(GLuint *texture, int attachment, glm::vec2 size) {
 	glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, size.x, size.y, 0, GL_RGB, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, *texture, 0);
 }
 
-void GBuffer::closeGBufferAndDepth(GLuint attachments[], GLuint *depth, glm::vec2 size) {
-	glDrawBuffers(3, attachments);
+void GBuffer::closeGBufferAndDepth(int drawSize ,GLuint attachments[], GLuint *depth, glm::vec2 size) {
+	glDrawBuffers(drawSize, attachments);
 
 	// Depth buffer
 	glGenRenderbuffers(1, depth);
@@ -185,7 +185,16 @@ void GBuffer::unbindVertexUnbindBuffer() {
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
+
 /* Shader */
+void GBuffer::sendUniform(Shader shader, std::string name, int value) {
+	glUniform1i(glGetUniformLocation(shader.programID, name.c_str()), value);
+}
+
+void GBuffer::sendUniform(Shader shader, std::string name, bool boolean) {
+	glUniform1i(glGetUniformLocation(shader.programID, name.c_str()), boolean ? 1 : 0);
+}
+
 void GBuffer::sendUniform(Shader shader, std::string name, glm::vec3 value) {
 	glUniform3fv(glGetUniformLocation(shader.programID, name.c_str()), 1, glm::value_ptr(value));
 }
@@ -218,4 +227,6 @@ void GBuffer::unbindTextures() {
 	glBindTexture(GL_TEXTURE_2D, 1);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, 2);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, 3);
 }
