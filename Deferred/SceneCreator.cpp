@@ -10,7 +10,6 @@ void SceneCreator::createScene(string file, Scene& newScene) {
 	string jsonString = FileReader::LoadStringFromFile(file);
 	// Parse the string into json
 	reader.parse(jsonString, json);
-	cout << "skybox..." << endl;
 
 	// Terrain and skybox
 	populateTerrain(&newScene, json);
@@ -138,6 +137,13 @@ void SceneCreator::populateDecoration(Scene * scene, Json::Value decoration) {
 
 
 void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
+
+	cout << "skybox..." << endl;
+	// Terrain
+	OBJ objSkybox = Geometry::LoadModelFromFile(terrain["skybox"]["object"].asString());
+	GLuint textureSkybox = TextureManager::Instance().getTextureID(terrain["skybox"]["texture"].asString());
+
+	scene->setSkyBox(objSkybox, textureSkybox);
 
 	cout << "terrain..." << endl;
 	// Terrain

@@ -23,14 +23,26 @@ Window window;
 Shader shaderGBuffer;
 Shader shaderPBR;
 Shader shaderBlur;
+Shader shaderFinal;
 
 Scene *scene;
 
 GLuint deferredVAO , deferredVBO;
 GLuint gBVAO, gBVBO;
 GLuint frameBuffer;
-GLuint buffNOR, buffDIF, buffPOS;
+GLuint buffNOR, buffDIF, buffPOS, buffSPEC;
 GLuint depthBuffer;
+
+
+// Lighting Pass
+GLuint lihgtingBuffer, buffALBEDO, buffLUMINANCE;
+
+
+// Final stack pass
+GLuint bloomBuffer[2];
+GLuint buffBLOOM[2];
+
+void moveCameraWithKeyboard();
 
 struct Quad {
 	OBJ object;
@@ -77,17 +89,44 @@ void initializeVAOVBO() {
 	
 	// Deferred VAO VBO
 	{
-		//glGenVertexArrays(1, &deferredVAO);
 		GBuffer::initFrameBuffer(&frameBuffer);
 		GBuffer::genTexture(&buffDIF, GL_COLOR_ATTACHMENT0, screenSize);
 		GBuffer::genTexture(&buffNOR, GL_COLOR_ATTACHMENT1, screenSize);
 		GBuffer::genTexture(&buffPOS, GL_COLOR_ATTACHMENT2, screenSize);
+		GBuffer::genTexture(&buffSPEC, GL_COLOR_ATTACHMENT3, screenSize);
 
-		GLuint attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+		GLuint attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
 
-		GBuffer::closeGBufferAndDepth(attachments, &depthBuffer, screenSize);
+		GBuffer::closeGBufferAndDepth(4, attachments, &depthBuffer, screenSize);
 
-		//glBindVertexArray(0);
+		// LightingPass 
+		{
+			GBuffer::initFrameBuffer(&lihgtingBuffer);
+			GBuffer::genTexture(&buffALBEDO, GL_COLOR_ATTACHMENT0, screenSize);
+			GBuffer::genTexture(&buffLUMINANCE, GL_COLOR_ATTACHMENT1, screenSize);
+
+			GLuint attachLighting[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+
+			GBuffer::closeGBufferAndDepth(2, attachLighting, &depthBuffer, screenSize);
+		}
+
+		// Bloom stack
+		{
+			// Horitzonal blur
+			GBuffer::initFrameBuffer(&bloomBuffer[0]);
+			GBuffer::genTexture(&buffBLOOM[0], GL_COLOR_ATTACHMENT0, screenSize);
+
+			GLuint attachmentsH[1] = { GL_COLOR_ATTACHMENT0 };
+
+			GBuffer::closeGBufferAndDepth(1, attachmentsH, &depthBuffer, screenSize);
+			
+			// Vertical Blur
+			GBuffer::initFrameBuffer(&bloomBuffer[1]);
+			GBuffer::genTexture(&buffBLOOM[1], GL_COLOR_ATTACHMENT0, screenSize);
+			GLuint attachmentsV[1] = { GL_COLOR_ATTACHMENT0 };
+
+			GBuffer::closeGBufferAndDepth(1, attachmentsV, &depthBuffer, screenSize);
+		}
 
 		glGenVertexArrays(1, &deferredVAO);
 		glGenBuffers(1, &deferredVBO);
@@ -114,46 +153,59 @@ void initializeVAOVBO() {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void recompileShaders() {
-	std::cout << "recompiling shaders..." << std::endl;
-	shaderPBR = GBuffer::createShader("../resources/shaders/pbr.vshader", "../resources/shaders/pbr.fshader");
+void compileShaders() {
+	std::cout << "compiling shaders" << std::endl;
+	// Create GBuffer Shader
+	{
+		shaderGBuffer = GBuffer::createShader("../resources/shaders/gbuffer.vshader", "../resources/shaders/gbuffer.fshader");
 
-	GBuffer::addAttribute(shaderPBR, "vertPosition");
-	GBuffer::addAttribute(shaderPBR, "vertNormal");
-	GBuffer::addAttribute(shaderPBR, "vertUV");
+		// AttRibutes
+		GBuffer::addAttribute(shaderGBuffer, "vertPosition");
+		GBuffer::addAttribute(shaderGBuffer, "vertNormal");
+		GBuffer::addAttribute(shaderGBuffer, "vertUV");
 
-	GBuffer::linkShaders(shaderPBR);
+		GBuffer::linkShaders(shaderGBuffer);
+	}
+	// Create Deferred Shader
 
-}
+	{
+		shaderPBR = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/pbr.fshader");
 
-void moveCameraWithKeyboard() {
-	// Rotate the camera with mouse
-	if (InputManager::Instance().mousePressed()) {
-		camera.rotate(InputManager::Instance().getMouseCoords());
+		GBuffer::addAttribute(shaderPBR, "vertPosition");
+		GBuffer::addAttribute(shaderPBR, "vertNormal");
+		GBuffer::addAttribute(shaderPBR, "vertUV");
+
+		GBuffer::linkShaders(shaderPBR);
+	}
+	// Create postProcess
+	{
+		shaderBlur = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/blur.fshader");
+
+		GBuffer::addAttribute(shaderBlur, "vertPosition");
+		GBuffer::addAttribute(shaderBlur, "vertNormal");
+		GBuffer::addAttribute(shaderBlur, "vertUV");
+
+		GBuffer::linkShaders(shaderBlur);
+
 	}
 
-	if (InputManager::Instance().isKeyDown(SDLK_q)) {
-		camera.moveTo(CameraMove::up);
+	// Final Stack accumulation
+	{
+		shaderFinal = GBuffer::createShader("../resources/shaders/quad_transform.vshader", "../resources/shaders/shader.fshader");
+
+		GBuffer::addAttribute(shaderFinal, "vertPosition");
+		GBuffer::addAttribute(shaderFinal, "vertNormal");
+		GBuffer::addAttribute(shaderFinal, "vertUV");
+
+		GBuffer::linkShaders(shaderFinal);
+
 	}
-	if (InputManager::Instance().isKeyDown(SDLK_e)) {
-		camera.moveTo(CameraMove::down);
-	}
-	if (InputManager::Instance().isKeyDown(SDLK_w)) {
-		camera.moveTo(CameraMove::forward);
-	}
-	if (InputManager::Instance().isKeyDown(SDLK_s)) {
-		camera.moveTo(CameraMove::backwards);
-	}
-	if (InputManager::Instance().isKeyDown(SDLK_a)) {
-		camera.moveTo(CameraMove::left);
-	}
-	if (InputManager::Instance().isKeyDown(SDLK_d)) {
-		camera.moveTo(CameraMove::right);
-	}
+
 }
 
 
@@ -184,11 +236,17 @@ void renderScene() {
 	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
 	
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(1.0f));
+
+	//GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getSkyBox().getMaterial().textureMap, GL_TEXTURE0, 0);
+	//sendObject(scene->getSkyBox().getMesh(), scene->getSkyBox().getGameObject(), scene->getSkyBox().getNumVertices());
 	for (DecorObjects decor : scene->listObjects) {
 
 		GBuffer::sendTexture(shaderGBuffer, "textureData", decor.e->getMaterial().textureMap, GL_TEXTURE0, 0);
 		if (decor.e->getMaterial().specularMap != -1) {
 			GBuffer::sendTexture(shaderGBuffer, "specularMap", decor.e->getMaterial().specularMap, GL_TEXTURE1, 1);
+			GBuffer::sendUniform(shaderGBuffer, "haveSpecularMap", true);
+		} else {
+			GBuffer::sendUniform(shaderGBuffer, "haveSpecularMap", false);
 		}
 
 		sendObject(decor.e->getMesh(), decor.g.at(0), decor.e->getNumVertices());
@@ -210,31 +268,14 @@ int main(int argc, char** argv) {
 	camera.setPerspectiveCamera();
 	camera.setViewMatrix();
 	
-	// Create GBuffer Shader
-	shaderGBuffer = GBuffer::createShader("../resources/shaders/gbuffer.vshader", "../resources/shaders/gbuffer.fshader");
-
-	// AttRibutes
-	GBuffer::addAttribute(shaderGBuffer, "vertPosition");
-	GBuffer::addAttribute(shaderGBuffer, "vertNormal");
-	GBuffer::addAttribute(shaderGBuffer, "vertUV");
-
-	GBuffer::linkShaders(shaderGBuffer);
-	// Create Deferred Shader
-	shaderPBR = GBuffer::createShader("../resources/shaders/pbr.vshader", "../resources/shaders/pbr.fshader");
-
-	GBuffer::addAttribute(shaderPBR, "vertPosition");
-	GBuffer::addAttribute(shaderPBR, "vertNormal");
-	GBuffer::addAttribute(shaderPBR, "vertUV");
-
-	GBuffer::linkShaders(shaderPBR);
-
+	compileShaders();
 	initializeVAOVBO();
 
 
 	// Init scene
 	scene = new Scene();
 	SceneCreator::Instance().createScene("../resources/scenes/scene_deferred.json", *scene);
-	glClearColor(0.2, 0.2, 0.3, 1.0);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
 
@@ -245,51 +286,114 @@ int main(int argc, char** argv) {
 		// UPDATE
 		// Handle inputs
 		if (InputManager::Instance().isKeyDown(SDLK_t)) {
-			recompileShaders();
+			compileShaders();
 		}
 		if (InputManager::Instance().handleInput() == -1) {
 			isOpen = false;
 		}
 		moveCameraWithKeyboard();
 
-		// RENDER
-		// Frame buffer for GBuffer
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// Geometry pass
+		{
+			// Frame buffer for GBuffer
+			glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// GBuffer Pass
-		GBuffer::use(shaderGBuffer);
+			// GBuffer Pass
+			GBuffer::use(shaderGBuffer);
 
-		// send camera to opengl
-		GBuffer::sendUniform(shaderGBuffer, "viewMatrix", camera.getViewMatrix());
-		GBuffer::sendUniform(shaderGBuffer, "projectionMatrix", camera.getProjectionCamera());
+			// send camera to opengl
+			GBuffer::sendUniform(shaderGBuffer, "viewMatrix", camera.getViewMatrix());
+			GBuffer::sendUniform(shaderGBuffer, "projectionMatrix", camera.getProjectionCamera());
 
-		// Send objects
-		renderScene();
+			// Send objects
+			renderScene();
 
-		// Unbind an unuse programs
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		GBuffer::unuse(shaderGBuffer);
+			// Unbind an unuse programs
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			GBuffer::unuse(shaderGBuffer);
+		}
+		// Lighting pass
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, lihgtingBuffer);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			// Deferred Pass
+			GBuffer::use(shaderPBR);
 
-		// Deferred Pass
-		GBuffer::use(shaderPBR);
+			GBuffer::sendUniform(shaderPBR, "viewerPosition", camera.getPosition());
+			GBuffer::sendTexture(shaderPBR, "gDiff", buffDIF, GL_TEXTURE0, 0);
+			GBuffer::sendTexture(shaderPBR, "gNorm", buffNOR, GL_TEXTURE1, 1);
+			GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
+			GBuffer::sendTexture(shaderPBR, "gSpec", buffSPEC, GL_TEXTURE3, 3);
 
-		GBuffer::sendUniform(shaderPBR, "viewerPosition", camera.getPosition());
-		GBuffer::sendTexture(shaderPBR, "gDiff", buffDIF, GL_TEXTURE0, 0);
-		GBuffer::sendTexture(shaderPBR, "gNorm", buffNOR, GL_TEXTURE1, 1);
-		GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
+			quad.draw();
+			GBuffer::unuse(shaderPBR);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+		// Bloom 
+		{
+			GBuffer::use(shaderBlur);
 
-		quad.draw();
+			for (int i = 0; i < 2; i++) {
+				glBindFramebuffer(GL_FRAMEBUFFER, bloomBuffer[i]);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//// Send all ligths
-		GBuffer::unuse(shaderPBR);
+				if (i == 0) {
+					GBuffer::sendTexture(shaderBlur, "gLuminance", buffLUMINANCE, GL_TEXTURE0, 0);
+				} else {
+					GBuffer::sendTexture(shaderBlur, "gLuminance", buffBLOOM[0], GL_TEXTURE0, 0);
+				}
+					
+				GBuffer::sendUniform(shaderBlur, "blurType", i);
 
+				quad.draw();
+			}
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			GBuffer::unuse(shaderBlur);
+		}
+		// Final stack
+		{
+			GBuffer::use(shaderFinal);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			GBuffer::sendTexture(shaderFinal, "gAlbedo", buffALBEDO, GL_TEXTURE0, 0);
+			GBuffer::sendTexture(shaderFinal, "gBloom", buffBLOOM[1], GL_TEXTURE1, 1);
+			quad.draw();
+
+			GBuffer::unuse(shaderFinal);
+		}
 		window.swapBuffer();
 	}
 
 	delete scene;
 
 	return 1;
+}
+
+
+void moveCameraWithKeyboard() {
+	// Rotate the camera with mouse
+	if (InputManager::Instance().mousePressed()) {
+		camera.rotate(InputManager::Instance().getMouseCoords());
+	}
+
+	if (InputManager::Instance().isKeyDown(SDLK_q)) {
+		camera.moveTo(CameraMove::up);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_e)) {
+		camera.moveTo(CameraMove::down);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_w)) {
+		camera.moveTo(CameraMove::forward);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_s)) {
+		camera.moveTo(CameraMove::backwards);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_a)) {
+		camera.moveTo(CameraMove::left);
+	}
+	if (InputManager::Instance().isKeyDown(SDLK_d)) {
+		camera.moveTo(CameraMove::right);
+	}
 }

@@ -1,4 +1,10 @@
 {
+	"skybox": {
+		"name" : "skybox",
+		"object": "../resources/objects/skybox.obj",
+		"texture": "../resources/images/skybox.png",
+		"material" : "../resources/materials/metal.json"
+	},
 	"terrain": {
 		"name" : "terrain",
 		"object": "../resources/objects/plane.obj",

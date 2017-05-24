@@ -40,13 +40,16 @@ public:
 
 	static void initFrameBuffer(GLuint *gbuffer);
 	static void genTexture(GLuint *texture, int attachment, glm::vec2 size);
-	static void closeGBufferAndDepth(GLuint attachments[], GLuint *depth, glm::vec2 size);
+	static void closeGBufferAndDepth(int drawSize, GLuint attachments[], GLuint *depth, glm::vec2 size);
 
 	static void sendTexture(Shader shader, std::string name, GLuint texture, int TEXTURE_GL, int unit);
 	static void sendDataToGPU(Vertex *data, int numVertices);
 	static void bindVertexArrayBindBuffer(GLuint vao, GLuint vbo);
 	static void unbindVertexUnbindBuffer();
 
+	static void sendUniform(Shader shader, std::string name, int value);
+
+	static void sendUniform(Shader shader, std::string name, bool boolean);
 	static void sendUniform(Shader shader, std::string name, glm::vec3 vec3);
 	static void sendUniform(Shader shader, std::string name, glm::mat4 value);
 	static void sendUniform(Shader shader, std::string name, glm::mat3 value);

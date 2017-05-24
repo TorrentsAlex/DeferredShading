@@ -1,6 +1,6 @@
 #version 330
 
-const float offset[3] = float[](0.0, 0.0003846153846, 0.002307692308);
+const float offset[3] = float[](0.0, 0.00063846153846, 0.0052307692308);
 const float weight[3] = float[](0.2270270270, 0.3162162162, 0.0702702703);
 
 in vec2 fragUV;
@@ -29,11 +29,9 @@ vec4 verticalBlur() {
   return color;
 }
 
-//vec4 blur() {}
-
 void main() {
   finalColor = texture(gLuminance, fragUV);
-  
+
    if (blurType == 0) {
     finalColor = horitzontalBlur();
    } else {
