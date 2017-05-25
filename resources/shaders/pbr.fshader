@@ -9,8 +9,8 @@ struct Light {
 	vec3 pos;// Or direction in case of directional
 };
 Light lights[maxlights] = Light[maxlights](
-	 Light(1, vec3(0.2, 0.10, 0.0), vec3(42.0, 44.0, 22.0)),
-	 Light(0, vec3(0.1, 0.1, 0.8), vec3(0.75, -0.75, -0.75))
+	 Light(1, vec3(0.3, 0.15, 0.0), vec3(42.0, 44.0, 22.0)),
+	 Light(0, vec3(0.5, 0.5, 2.5), vec3(0.75, -0.75, -0.75))
 );
 // pass for uniforms
 const float roughness = 0.45;
