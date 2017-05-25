@@ -149,7 +149,7 @@ void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 	Json::Value cubemaps = terrain["skybox"]["cubemap"];
 	if (cubemaps.size() == 6) {
 		for (size_t i = 0; i < 6; i++) {
-			//GLuint textureTextureManager::Instance().getTextureID(cubemaps[i].asString());
+			//GLuint cmId = TextureManager::Instance().getTextureCubeMapID(cubemaps[i].asString());
 
 		}
 	}
@@ -159,6 +159,12 @@ void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 	// Terrain
 	OBJ objTerrain = Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString());
 	GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
+	std::string specularTerrainST = terrain["terrain"]["specularMap"].asString();
+	if (specularTerrainST.compare("") != 0) {
+		GLuint specularTerrain = TextureManager::Instance().getTextureID(specularTerrainST);
+		metalMaterial.specularMap = specularTerrain;
 
+	}
 	scene->setTerrain(objTerrain, textureTerrain, metalMaterial);
+	metalMaterial.specularMap = -1;
 }

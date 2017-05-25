@@ -26,8 +26,8 @@ GLuint TextureManager::loadTexture(std::string filePath) {
 	glBindTexture(GL_TEXTURE_2D, _texture.id);
 
 	// Set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT (usually basic wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_LINEAR);	// Set texture wrapping to GL_REPEAT (usually basic wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
 	// Set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -64,16 +64,39 @@ GLuint TextureManager::loadTexture(std::string filePath) {
 	return _texture.id;
 }
 
+GLuint TextureManager::load3DTexture(GLuint position, std::string filePath) {
+	return GLuint();
+}
+
 /**
 * Return the textureID of a texture. If the requested texture doesn't exist, it will load it
 * @param filePath is the filename of the texture
 * @return the texture ID
 */
 GLuint TextureManager::getTextureID(std::string filePath) {
+
+	// Save texture id to array
 	for (unsigned int i = 0; i < _listOfTextures.size(); i++) {
 		if (_listOfTextures[i] == filePath) {
 			return _textureData[i].id;
 		}
 	}
 	return loadTexture(filePath);
+}
+
+GLuint TextureManager::getTextureCubemapID(std::string type, std::string filePath) {
+	for (unsigned int i = 0; i < _listOfTextures.size(); i++) {
+		if (_listOfTextures[i] == filePath) {
+			return _textureData[i].id;
+		}
+	}
+
+	GLuint position = 0;
+	for (std::pair<std::string, GLuint >  cmPair: cubemapID) {
+		//if ()
+	}
+	// What type of cubemap is 
+	//if (type.compare("rt") == 0) {}
+
+	return load3DTexture(position, filePath);
 }
