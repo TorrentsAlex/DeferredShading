@@ -24,6 +24,7 @@ uniform sampler2D gDiff;
 uniform sampler2D gNorm;
 uniform sampler2D gPos;
 uniform sampler2D gSpec;
+uniform samplerCube cubemap;
 
 out vec4 lightColor;
 out vec4 luminance;
@@ -64,7 +65,10 @@ vec4 calcColor(Light l) {
 	float NdotL = max(0.0, dot(N, L));
 
 	vec4 albedo = vec4(texture(gDiff, fragUV).rgb, 1.0);
-
+	// ADding cubemap only to terrain
+	//if (worldPos.y < 1.0) {
+	albedo = texture(cubemap, reflect(N, V), 0.0);
+	//}
 	vec3 diffuse = albedo.rgb * clamp(NdotL, 0.0, 1.0) * (1.0 - metalness);
 
 	// ambient color + PBR

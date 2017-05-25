@@ -11,15 +11,6 @@
 #include <glm/glm.hpp>			//OpenGL Mathematics
 
 
-const std::pair<std::string, GLuint > cubemapID[6] = {
-	{"ft", GL_TEXTURE_CUBE_MAP_POSITIVE_X },
-	{ "lf", GL_TEXTURE_CUBE_MAP_NEGATIVE_X },
-	{ "up", GL_TEXTURE_CUBE_MAP_POSITIVE_Y },
-	{ "dn", GL_TEXTURE_CUBE_MAP_NEGATIVE_Y },
-	{ "bk", GL_TEXTURE_CUBE_MAP_POSITIVE_Z },
-	{ "tp", GL_TEXTURE_CUBE_MAP_NEGATIVE_Z }
-};
-
 struct GLTexture {
 	GLuint id;
 	int width;
@@ -30,7 +21,7 @@ struct GLTexture {
 class TextureManager {
 public:
 	GLuint getTextureID(std::string filePath);
-	GLuint getTextureCubemapID(std::string type, std::string filePath);
+	GLuint getTextureCubemapID(std::vector<std::string> filePath);
 	// Pattern singleton
 	static TextureManager& Instance() {
 		static TextureManager instance;
@@ -46,7 +37,7 @@ private:
 
 
 	GLuint loadTexture(std::string filePath);
-	GLuint load3DTexture(GLuint position, std::string filePath);
+	GLuint load3DTexture(std::vector<std::string> filePath);
 
 	std::vector <GLTexture> _textureData;
 	std::vector <std::string> _listOfTextures;

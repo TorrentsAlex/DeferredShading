@@ -5,12 +5,12 @@
 		"texture": "../resources/images/skybox.png",
 		"material" : "../resources/materials/metal.json",
 		"cubemap" : [
-			{"up" : "../resources/images/cubemap/oasis_up.png"},
-			{"dn" : "../resources/images/cubemap/oasis_dn.png"},
-			{"ft" : "../resources/images/cubemap/oasis_ft.png"},
-			{"bk" : "../resources/images/cubemap/oasis_bk.png"},
-			{"rt" : "../resources/images/cubemap/oasis_rt.png"},
-			{"lf" : "../resources/images/cubemap/oasis_lf.png"}
+			 "../resources/images/cubemap/oasis_up.png",
+			 "../resources/images/cubemap/oasis_dn.png",
+			 "../resources/images/cubemap/oasis_ft.png",
+			"../resources/images/cubemap/oasis_bk.png",
+			 "../resources/images/cubemap/oasis_rt.png",
+			"../resources/images/cubemap/oasis_lf.png"
 			]
 	},
 	"terrain": {

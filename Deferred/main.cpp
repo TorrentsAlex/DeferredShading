@@ -327,6 +327,8 @@ int main(int argc, char** argv) {
 			GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
 			GBuffer::sendTexture(shaderPBR, "gSpec", buffSPEC, GL_TEXTURE3, 3);
 
+			GBuffer::sendCubemap(shaderPBR, "cubemap", scene->getCubemap());
+
 			quad.draw();
 			GBuffer::unuse(shaderPBR);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
