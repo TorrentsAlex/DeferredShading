@@ -13,8 +13,8 @@ Light lights[maxlights] = Light[maxlights](
 	 Light(0, vec3(0.1, 0.1, 0.8), vec3(0.75, -0.75, -0.75))
 );
 // pass for uniforms
-const float roughness = 0.4;
-const float metalness = 0.5;
+const float roughness = 0.45;
+const float metalness = 0.3;
 
 in vec2 fragUV;
 

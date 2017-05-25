@@ -140,10 +140,20 @@ void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 
 	cout << "skybox..." << endl;
 	// Terrain
-	OBJ objSkybox = Geometry::LoadModelFromFile(terrain["skybox"]["object"].asString());
-	GLuint textureSkybox = TextureManager::Instance().getTextureID(terrain["skybox"]["texture"].asString());
+	//OBJ objSkybox = Geometry::LoadModelFromFile(terrain["skybox"]["object"].asString());
+	//GLuint textureSkybox = TextureManager::Instance().getTextureID(terrain["skybox"]["texture"].asString());
 
-	scene->setSkyBox(objSkybox, textureSkybox);
+	//scene->setSkyBox(objSkybox, textureSkybox);
+	
+	// Generate CubeMap for the scene
+	Json::Value cubemaps = terrain["skybox"]["cubemap"];
+	if (cubemaps.size() == 6) {
+		for (size_t i = 0; i < 6; i++) {
+			//GLuint textureTextureManager::Instance().getTextureID(cubemaps[i].asString());
+
+		}
+	}
+
 
 	cout << "terrain..." << endl;
 	// Terrain

@@ -3,7 +3,15 @@
 		"name" : "skybox",
 		"object": "../resources/objects/skybox.obj",
 		"texture": "../resources/images/skybox.png",
-		"material" : "../resources/materials/metal.json"
+		"material" : "../resources/materials/metal.json",
+		"cubemap" : [
+			{"up" : "../resources/images/oasis_com/oasis_up.png"},
+			{"dn" : "../resources/images/oasis_com/oasis_dn.png"},
+			{"ft" : "../resources/images/oasis_com/oasis_ft.png"},
+			{"bk" : "../resources/images/oasis_com/oasis_bk.png"},
+			{"rt" : "../resources/images/oasis_com/oasis_rt.png"},
+			{"lf" : "../resources/images/oasis_com/oasis_lf.png"}
+			]
 	},
 	"terrain": {
 		"name" : "terrain",
