@@ -2,26 +2,25 @@
 	"skybox": {
 		"name" : "skybox",
 		"object": "../resources/objects/skybox.obj",
-		"texture": "../resources/images/skybox.png",
-		"material" : "../resources/materials/metal.json"
+		"texture": "../resources/images/skybox.png"
 	},
 	"terrain": {
 		"name" : "terrain",
 		"object": "../resources/objects/plane.obj",
 		"texture": "../resources/images/floor.jpg",
-		"material" : "../resources/materials/metal.json"
+		"specularMap" : "../resources/images/sphere_specular.png"
 	},
 	"decoration" : [
 		{
 			"name" : "teapot",
 			"object" : "../resources/objects/teapot.obj",
 			"texture" : "../resources/images/cup.jpg",
+			"specularMap" : "../resources/images/teapot_specular.png",
 			"position": {
 				"x" : -40,
 				"y" : 0,
 				"z" : 0
-			},
-			"material" : "../resources/materials/metal.json"
+			}
 		},
 		{
 			"name" : "lamp",
@@ -32,19 +31,18 @@
 				"x" : 26,
 				"y" : 0,
 				"z" : 0
-			},
-			"material" : "../resources/materials/metal.json"
+			}
 		},
 		{
 			"name" : "sphere",
 			"object" : "../resources/objects/sphere.obj",
-			"texture" : "../resources/images/beer_color.png",
+			"texture" : "../resources/images/red.png",
+			"specularMap" : "../resources/images/sphere_specular.png",
 			"position": {
 				"x" : 0,
-				"y" : 50,
-				"z" : -50
-			},
-			"material" : "../resources/materials/metal.json"
+				"y" : 25,
+				"z" : 50
+			}
 		}
 	],
 	"lights" : [

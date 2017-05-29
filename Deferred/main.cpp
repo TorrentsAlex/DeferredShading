@@ -257,6 +257,8 @@ void renderScene() {
 
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
 	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getTerrain().getMaterial().textureMap, GL_TEXTURE0, 0);
+	GBuffer::sendTexture(shaderGBuffer, "specularMap", scene->getTerrain().getMaterial().specularMap, GL_TEXTURE1, 1);
+	GBuffer::sendUniform(shaderGBuffer, "haveSpecularMap", true);
 	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
 	GBuffer::unbindVertexUnbindBuffer();
 }
@@ -283,8 +285,6 @@ int main(int argc, char** argv) {
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
 
-	//Van Gogh filter
-	GLuint vangogh = TextureManager::Instance().getTextureID("../resources/images/vangogh.jpg");
 
 	bool isOpen = true;
 	while (isOpen) {
@@ -314,7 +314,6 @@ int main(int argc, char** argv) {
 			// send camera to opengl
 			GBuffer::sendUniform(shaderGBuffer, "viewMatrix", camera.getViewMatrix());
 			GBuffer::sendUniform(shaderGBuffer, "projectionMatrix", camera.getProjectionCamera());
-			GBuffer::sendTexture(shaderGBuffer, "vangogh", vangogh, GL_TEXTURE2, 2);
 
 			// Send objects
 			renderScene();

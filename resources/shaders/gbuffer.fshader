@@ -15,7 +15,7 @@ out vec4 gSpecular;
 
 void main() {
 
-	gDiffuse = texture(textureData, fragUV);
+	gDiffuse = vec4(texture(textureData, fragUV).rgb, 1.0);
 	gNormal = vec4(fragNormal, 1.0);
 	gPosition = vec4(fragPosition, 1.0);
 

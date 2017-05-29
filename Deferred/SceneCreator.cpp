@@ -149,6 +149,10 @@ void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 	// Terrain
 	OBJ objTerrain = Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString());
 	GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
+	GLuint textureSpecular = TextureManager::Instance().getTextureID(terrain["terrain"]["specularMap"].asString());
 
+	metalMaterial.specularMap = textureSpecular;
 	scene->setTerrain(objTerrain, textureTerrain, metalMaterial);
+
+	metalMaterial.specularMap = -1;
 }

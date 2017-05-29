@@ -10,8 +10,8 @@ struct Light {
 };
 
 // pass for uniforms
-const float roughness = 0.4;
-const float metalness = 0.5;
+//const float roughness = 0.35; // g
+//const float metalness = 0.5; // b
 
 in vec2 fragUV;
 
@@ -33,7 +33,7 @@ vec3 fresnel(float VdotH, vec3 c) {
 }
 
 float dBeckmann(float NdotH) {
-	//float roughness = texture(gDiff, fragUV).a;
+	float roughness = texture(gSpec, fragUV).g;
 	float a2 = pow(roughness, 4);
 	float nd = NdotH * NdotH;
 
@@ -63,7 +63,7 @@ vec4 calcColor(Light l) {
 	float NdotL = max(0.0, dot(N, L));
 
 	vec4 albedo = vec4(texture(gDiff, fragUV).rgb, 1.0);
-
+	float metalness = texture(gSpec, fragUV).b;
 	vec3 diffuse = albedo.rgb * clamp(NdotL, 0.0, 1.0) * (1.0 - metalness);
 
 	// ambient color + PBR
