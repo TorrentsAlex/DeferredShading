@@ -237,8 +237,6 @@ void renderScene() {
 	
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(1.0f));
 
-	//GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getSkyBox().getMaterial().textureMap, GL_TEXTURE0, 0);
-	//sendObject(scene->getSkyBox().getMesh(), scene->getSkyBox().getGameObject(), scene->getSkyBox().getNumVertices());
 	for (DecorObjects decor : scene->listObjects) {
 
 		GBuffer::sendTexture(shaderGBuffer, "textureData", decor.e->getMaterial().textureMap, GL_TEXTURE0, 0);
@@ -279,6 +277,8 @@ int main(int argc, char** argv) {
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
 
+	//Van Gogh filter
+	GLuint vangogh = TextureManager::Instance().getTextureID("../resources/images/vangogh.jpg");
 
 	bool isOpen = true;
 	while (isOpen) {
@@ -298,6 +298,7 @@ int main(int argc, char** argv) {
 			// Frame buffer for GBuffer
 			glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 			// GBuffer Pass
 			GBuffer::use(shaderGBuffer);
@@ -326,6 +327,14 @@ int main(int argc, char** argv) {
 			GBuffer::sendTexture(shaderPBR, "gNorm", buffNOR, GL_TEXTURE1, 1);
 			GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
 			GBuffer::sendTexture(shaderPBR, "gSpec", buffSPEC, GL_TEXTURE3, 3);
+
+			int count = 0;
+			for (Light l : scene->getLights()) {
+				GBuffer::sendUniform(shaderPBR, "lights["+ std::to_string(count) +"].type", l.getType());
+				GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].amb", l.getAmbient());
+				GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].pos", l.getPosition());
+				++count;
+			}
 
 			quad.draw();
 			GBuffer::unuse(shaderPBR);
@@ -359,6 +368,7 @@ int main(int argc, char** argv) {
 
 			GBuffer::sendTexture(shaderFinal, "gAlbedo", buffALBEDO, GL_TEXTURE0, 0);
 			GBuffer::sendTexture(shaderFinal, "gBloom", buffBLOOM[1], GL_TEXTURE1, 1);
+
 			quad.draw();
 
 			GBuffer::unuse(shaderFinal);

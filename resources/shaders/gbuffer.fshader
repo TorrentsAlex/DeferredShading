@@ -6,7 +6,6 @@ in vec3 fragPosition;
 
 uniform sampler2D textureData;
 uniform sampler2D specularMap;
-
 uniform int haveSpecularMap;
 
 out vec4 gDiffuse;
@@ -16,7 +15,7 @@ out vec4 gSpecular;
 
 void main() {
 
-	gDiffuse = vec4(texture(textureData, fragUV).rgb, 1.0);
+	gDiffuse = texture(textureData, fragUV);
 	gNormal = vec4(fragNormal, 1.0);
 	gPosition = vec4(fragPosition, 1.0);
 

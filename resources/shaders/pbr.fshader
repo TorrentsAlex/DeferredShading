@@ -8,10 +8,7 @@ struct Light {
 	vec3 amb;
 	vec3 pos;// Or direction in case of directional
 };
-Light lights[maxlights] = Light[maxlights](
-	 Light(1, vec3(0.2, 0.10, 0.0), vec3(42.0, 44.0, 22.0)),
-	 Light(0, vec3(0.1, 0.1, 0.8), vec3(0.75, -0.75, -0.75))
-);
+
 // pass for uniforms
 const float roughness = 0.4;
 const float metalness = 0.5;
@@ -24,6 +21,8 @@ uniform sampler2D gDiff;
 uniform sampler2D gNorm;
 uniform sampler2D gPos;
 uniform sampler2D gSpec;
+
+uniform Light lights[maxlights];
 
 out vec4 lightColor;
 out vec4 luminance;
@@ -93,10 +92,9 @@ void main() {
 	for (int i = 0; i < maxlights; ++i) {
 		lightColor += calcColor(lights[i]);
 	}
- // Code for luminance
-		if (dot(lightColor.rgb, vec3(0.2126, 0.7152, 0.0722)) > 0.5) {
-				luminance = vec4(lightColor.rgb, 1.0);
-		}  else {
-				luminance = vec4(0.0, 0.0, 0.0, 0.0);
-		}
+	
+
+	if (dot(lightColor.rgb, vec3(0.2126, 0.7152, 0.0722)) > 0.8) {
+		luminance = vec4(lightColor.rgb, 1.0);
+	}
 }

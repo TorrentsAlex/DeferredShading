@@ -138,12 +138,12 @@ void SceneCreator::populateDecoration(Scene * scene, Json::Value decoration) {
 
 void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 
-	cout << "skybox..." << endl;
+	//cout << "skybox..." << endl;
 	// Terrain
-	OBJ objSkybox = Geometry::LoadModelFromFile(terrain["skybox"]["object"].asString());
-	GLuint textureSkybox = TextureManager::Instance().getTextureID(terrain["skybox"]["texture"].asString());
+	//OBJ objSkybox = Geometry::LoadModelFromFile(terrain["skybox"]["object"].asString());
+	//GLuint textureSkybox = TextureManager::Instance().getTextureID(terrain["skybox"]["texture"].asString());
 
-	scene->setSkyBox(objSkybox, textureSkybox);
+	//scene->setSkyBox(objSkybox, textureSkybox);
 
 	cout << "terrain..." << endl;
 	// Terrain
