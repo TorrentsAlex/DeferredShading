@@ -92,7 +92,7 @@ void main() {
 	for (int i = 0; i < maxlights; ++i) {
 		lightColor += calcColor(lights[i]);
 	}
-	
+
 
 	if (dot(lightColor.rgb, vec3(0.2126, 0.7152, 0.0722)) > 0.8) {
 		luminance = vec4(lightColor.rgb, 1.0);

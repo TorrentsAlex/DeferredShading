@@ -208,7 +208,13 @@ void compileShaders() {
 
 }
 
-
+void loadScene() {
+	if (scene) {
+		delete scene;
+	}
+	scene = new Scene();
+	SceneCreator::Instance().createScene("../resources/scenes/scene_deferred.json", *scene);
+}
 void sendObject(Vertex * data, GameObject object, int numVertices) {
 	glm::mat4 modelMatrix;
 	glm::mat3 normalMatrix;
@@ -231,9 +237,6 @@ void renderScene() {
 
 	GBuffer::bindVertexArrayBindBuffer(gBVAO, gBVBO);
 
-	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
-	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getTerrain().getMaterial().textureMap, GL_TEXTURE0, 0);
-	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
 	
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(1.0f));
 
@@ -252,6 +255,9 @@ void renderScene() {
 		GBuffer::unbindTextures();
 	}
 
+	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
+	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getTerrain().getMaterial().textureMap, GL_TEXTURE0, 0);
+	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
 	GBuffer::unbindVertexUnbindBuffer();
 }
 
@@ -271,8 +277,8 @@ int main(int argc, char** argv) {
 
 
 	// Init scene
-	scene = new Scene();
-	SceneCreator::Instance().createScene("../resources/scenes/scene_deferred.json", *scene);
+	loadScene();
+
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
@@ -287,6 +293,8 @@ int main(int argc, char** argv) {
 		// Handle inputs
 		if (InputManager::Instance().isKeyDown(SDLK_t)) {
 			compileShaders();
+		}if (InputManager::Instance().isKeyDown(SDLK_r)) {
+			loadScene();
 		}
 		if (InputManager::Instance().handleInput() == -1) {
 			isOpen = false;
@@ -306,6 +314,7 @@ int main(int argc, char** argv) {
 			// send camera to opengl
 			GBuffer::sendUniform(shaderGBuffer, "viewMatrix", camera.getViewMatrix());
 			GBuffer::sendUniform(shaderGBuffer, "projectionMatrix", camera.getProjectionCamera());
+			GBuffer::sendTexture(shaderGBuffer, "vangogh", vangogh, GL_TEXTURE2, 2);
 
 			// Send objects
 			renderScene();
