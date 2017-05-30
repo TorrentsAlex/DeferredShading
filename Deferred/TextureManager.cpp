@@ -81,7 +81,7 @@ GLuint TextureManager::load3DTexture(std::vector<std::string> filePath) {
 		if (image == NULL) {
 			std::cout << __FUNCTION__ << ":System was not able to load the following texture:" << filePath.at(i).c_str() << std::endl;
 		}
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, texture.width, texture.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, texture.width, texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
 	}
 
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
