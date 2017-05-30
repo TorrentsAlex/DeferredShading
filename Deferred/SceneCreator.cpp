@@ -147,6 +147,15 @@ void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 
 
 	cout << "terrain..." << endl;
+	std::vector<std::string> cubemapsPaths;
+	Json::Value cubemaps = terrain["skybox"]["cubemap"];
+	if (cubemaps.size() == 6) {
+		for (size_t i = 0; i < 6; i++) {				
+				cubemapsPaths.push_back(cubemaps[i].asString());
+		}
+		GLuint cmId = TextureManager::Instance().getTextureCubemapID(cubemapsPaths);
+		scene->setCubemap(cmId);
+	}
 	// Terrain
 	OBJ objTerrain = Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString());
 	GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());

@@ -27,6 +27,4 @@ void main() {
   fragColor = texture(gColor, fragUV) + texture(gBloom, fragUV);
 
   fragColor = filmic_tonemapping(fragColor) / filmic_tonemapping(vec4(LINEAR_WHITE_POINT_VALUE));
-
-  fragColor = pow(fragColor, vec4(2.2));
 }
