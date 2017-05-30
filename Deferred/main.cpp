@@ -284,7 +284,7 @@ int main(int argc, char** argv) {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
-
+	GLuint noise = TextureManager::Instance().getTextureID("../resources/images/noise.png");
 
 	bool isOpen = true;
 	while (isOpen) {
@@ -293,7 +293,8 @@ int main(int argc, char** argv) {
 		// Handle inputs
 		if (InputManager::Instance().isKeyDown(SDLK_t)) {
 			compileShaders();
-		}if (InputManager::Instance().isKeyDown(SDLK_r)) {
+		}
+		if (InputManager::Instance().isKeyDown(SDLK_r)) {
 			loadScene();
 		}
 		if (InputManager::Instance().handleInput() == -1) {
@@ -335,6 +336,7 @@ int main(int argc, char** argv) {
 			GBuffer::sendTexture(shaderPBR, "gNorm", buffNOR, GL_TEXTURE1, 1);
 			GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
 			GBuffer::sendTexture(shaderPBR, "gSpec", buffSPEC, GL_TEXTURE3, 3);
+			GBuffer::sendTexture(shaderPBR, "noise", noise, GL_TEXTURE4, 4);
 
 			GBuffer::sendCubemap(shaderPBR, "cubemap", scene->getCubemap());
 			int count = 0;
