@@ -21,9 +21,12 @@ vec4 filmic_tonemapping(vec4 x)
             (x*(SHOULDER_STRENGTH*x + LINEAR_STRENGTH) + TOE_STRENGTH * TOE_DENOMINATOR)) - TOE_NUMERATOR/TOE_DENOMINATOR;
 }
 void main() {
+  fragColor =  texture(gColor, fragUV) + texture(gBloom, fragUV);
 
 
   fragColor = texture(gColor, fragUV) + texture(gBloom, fragUV);
 
   fragColor = filmic_tonemapping(fragColor) / filmic_tonemapping(vec4(LINEAR_WHITE_POINT_VALUE));
+
+  fragColor = pow(fragColor, vec4(2.2));
 }

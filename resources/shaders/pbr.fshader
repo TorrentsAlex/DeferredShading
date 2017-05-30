@@ -8,13 +8,10 @@ struct Light {
 	vec3 amb;
 	vec3 pos;// Or direction in case of directional
 };
-Light lights[maxlights] = Light[maxlights](
-	 Light(1, vec3(0.3, 0.15, 0.0), vec3(42.0, 44.0, 22.0)),
-	 Light(0, vec3(0.5, 0.5, 2.5), vec3(0.75, -0.75, -0.75))
-);
+
 // pass for uniforms
-const float roughness = 0.45;
-const float metalness = 0.3;
+//const float roughness = 0.35; // g
+//const float metalness = 0.5; // b
 
 in vec2 fragUV;
 
@@ -26,6 +23,8 @@ uniform sampler2D gPos;
 uniform sampler2D gSpec;
 uniform samplerCube cubemap;
 
+uniform Light lights[maxlights];
+
 out vec4 lightColor;
 out vec4 luminance;
 
@@ -35,7 +34,7 @@ vec3 fresnel(float VdotH, vec3 c) {
 }
 
 float dBeckmann(float NdotH) {
-	//float roughness = texture(gDiff, fragUV).a;
+	float roughness = texture(gSpec, fragUV).g;
 	float a2 = pow(roughness, 4);
 	float nd = NdotH * NdotH;
 
@@ -65,10 +64,11 @@ vec4 calcColor(Light l) {
 	float NdotL = max(0.0, dot(N, L));
 
 	vec4 albedo = vec4(texture(gDiff, fragUV).rgb, 1.0);
-	// ADding cubemap only to terrain
-	//if (worldPos.y < 1.0) {
+
 	albedo = texture(cubemap, reflect(N, V), 0.0);
-	//}
+
+	float metalness = texture(gSpec, fragUV).b;
+
 	vec3 diffuse = albedo.rgb * clamp(NdotL, 0.0, 1.0) * (1.0 - metalness);
 
 	// ambient color + PBR
@@ -97,10 +97,9 @@ void main() {
 	for (int i = 0; i < maxlights; ++i) {
 		lightColor += calcColor(lights[i]);
 	}
- // Code for luminance
-		if (dot(lightColor.rgb, vec3(0.2126, 0.7152, 0.0722)) > 0.5) {
-				luminance = vec4(lightColor.rgb, 1.0);
-		}  else {
-				luminance = vec4(0.0, 0.0, 0.0, 0.0);
-		}
+
+
+	if (dot(lightColor.rgb, vec3(0.2126, 0.7152, 0.0722)) > 0.8) {
+		luminance = vec4(lightColor.rgb, 1.0);
+	}
 }

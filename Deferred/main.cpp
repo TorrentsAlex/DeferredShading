@@ -208,7 +208,13 @@ void compileShaders() {
 
 }
 
-
+void loadScene() {
+	if (scene) {
+		delete scene;
+	}
+	scene = new Scene();
+	SceneCreator::Instance().createScene("../resources/scenes/scene_deferred.json", *scene);
+}
 void sendObject(Vertex * data, GameObject object, int numVertices) {
 	glm::mat4 modelMatrix;
 	glm::mat3 normalMatrix;
@@ -231,14 +237,9 @@ void renderScene() {
 
 	GBuffer::bindVertexArrayBindBuffer(gBVAO, gBVBO);
 
-	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
-	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getTerrain().getMaterial().textureMap, GL_TEXTURE0, 0);
-	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
 	
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(1.0f));
 
-	//GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getSkyBox().getMaterial().textureMap, GL_TEXTURE0, 0);
-	//sendObject(scene->getSkyBox().getMesh(), scene->getSkyBox().getGameObject(), scene->getSkyBox().getNumVertices());
 	for (DecorObjects decor : scene->listObjects) {
 
 		GBuffer::sendTexture(shaderGBuffer, "textureData", decor.e->getMaterial().textureMap, GL_TEXTURE0, 0);
@@ -254,6 +255,11 @@ void renderScene() {
 		GBuffer::unbindTextures();
 	}
 
+	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
+	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getTerrain().getMaterial().textureMap, GL_TEXTURE0, 0);
+	GBuffer::sendTexture(shaderGBuffer, "specularMap", scene->getTerrain().getMaterial().specularMap, GL_TEXTURE1, 1);
+	GBuffer::sendUniform(shaderGBuffer, "haveSpecularMap", true);
+	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
 	GBuffer::unbindVertexUnbindBuffer();
 }
 
@@ -273,8 +279,8 @@ int main(int argc, char** argv) {
 
 
 	// Init scene
-	scene = new Scene();
-	SceneCreator::Instance().createScene("../resources/scenes/scene_deferred.json", *scene);
+	loadScene();
+
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
@@ -287,6 +293,8 @@ int main(int argc, char** argv) {
 		// Handle inputs
 		if (InputManager::Instance().isKeyDown(SDLK_t)) {
 			compileShaders();
+		}if (InputManager::Instance().isKeyDown(SDLK_r)) {
+			loadScene();
 		}
 		if (InputManager::Instance().handleInput() == -1) {
 			isOpen = false;
@@ -298,6 +306,7 @@ int main(int argc, char** argv) {
 			// Frame buffer for GBuffer
 			glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 			// GBuffer Pass
 			GBuffer::use(shaderGBuffer);
@@ -328,6 +337,14 @@ int main(int argc, char** argv) {
 			GBuffer::sendTexture(shaderPBR, "gSpec", buffSPEC, GL_TEXTURE3, 3);
 
 			GBuffer::sendCubemap(shaderPBR, "cubemap", scene->getCubemap());
+			int count = 0;
+      
+			for (Light l : scene->getLights()) {
+				GBuffer::sendUniform(shaderPBR, "lights["+ std::to_string(count) +"].type", l.getType());
+				GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].amb", l.getAmbient());
+				GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].pos", l.getPosition());
+				++count;
+			}
 
 			quad.draw();
 			GBuffer::unuse(shaderPBR);
@@ -361,6 +378,7 @@ int main(int argc, char** argv) {
 
 			GBuffer::sendTexture(shaderFinal, "gAlbedo", buffALBEDO, GL_TEXTURE0, 0);
 			GBuffer::sendTexture(shaderFinal, "gBloom", buffBLOOM[1], GL_TEXTURE1, 1);
+
 			quad.draw();
 
 			GBuffer::unuse(shaderFinal);

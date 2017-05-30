@@ -6,7 +6,6 @@ in vec3 fragPosition;
 
 uniform sampler2D textureData;
 uniform sampler2D specularMap;
-
 uniform int haveSpecularMap;
 
 out vec4 gDiffuse;

@@ -138,35 +138,23 @@ void SceneCreator::populateDecoration(Scene * scene, Json::Value decoration) {
 
 void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 
-	cout << "skybox..." << endl;
+	//cout << "skybox..." << endl;
 	// Terrain
 	//OBJ objSkybox = Geometry::LoadModelFromFile(terrain["skybox"]["object"].asString());
 	//GLuint textureSkybox = TextureManager::Instance().getTextureID(terrain["skybox"]["texture"].asString());
 
 	//scene->setSkyBox(objSkybox, textureSkybox);
-	
-	// Generate CubeMap for the scene
-	std::vector<std::string> cubemapsPaths;
-	Json::Value cubemaps = terrain["skybox"]["cubemap"];
-	if (cubemaps.size() == 6) {
-		for (size_t i = 0; i < 6; i++) {
-			cubemapsPaths.push_back(cubemaps[i].asString());
-		}
-		GLuint cmId = TextureManager::Instance().getTextureCubemapID(cubemapsPaths);
-		scene->setCubemap(cmId);
-	}
 
 
 	cout << "terrain..." << endl;
 	// Terrain
 	OBJ objTerrain = Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString());
 	GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
-	std::string specularTerrainST = terrain["terrain"]["specularMap"].asString();
-	if (specularTerrainST.compare("") != 0) {
-		GLuint specularTerrain = TextureManager::Instance().getTextureID(specularTerrainST);
-		metalMaterial.specularMap = specularTerrain;
 
-	}
+	GLuint textureSpecular = TextureManager::Instance().getTextureID(terrain["terrain"]["specularMap"].asString());
+
+	metalMaterial.specularMap = textureSpecular;
 	scene->setTerrain(objTerrain, textureTerrain, metalMaterial);
+
 	metalMaterial.specularMap = -1;
 }
