@@ -21,6 +21,7 @@ private:
 	vector<Entity> sDecoration;
 
 	vector<Light> sLights;
+	GLuint sCubemap;
 
 public:
 	Scene();
@@ -32,12 +33,14 @@ public:
 	void setTerrain(OBJ object, GLuint texture, Material material);
 	void setDecoration(vector<Entity> decoration);
 	void setLights(vector<Light> lights);
+	void setCubemap(GLuint cubemap);
 
 	// Getters
 	Entity getTerrain();
 	Entity getSkyBox();
 	vector<Entity> getDecoration();
 	vector<Light> getLights();
+	GLuint getCubemap();
 
 	void clean();
 	void update();

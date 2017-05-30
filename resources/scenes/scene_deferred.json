@@ -2,7 +2,16 @@
 	"skybox": {
 		"name" : "skybox",
 		"object": "../resources/objects/skybox.obj",
-		"texture": "../resources/images/skybox.png"
+		"texture": "../resources/images/skybox.png",
+		"material" : "../resources/materials/metal.json",
+		"cubemap" : [
+			 "../resources/images/cubemap/dev_rt.png",
+			 "../resources/images/cubemap/dev_lf.png",
+			 "../resources/images/cubemap/dev_up.png",
+			"../resources/images/cubemap/dev_dn.png",
+			 "../resources/images/cubemap/dev_bk.png",
+			"../resources/images/cubemap/dev_ft.png"
+			]
 	},
 	"terrain": {
 		"name" : "terrain",

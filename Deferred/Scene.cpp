@@ -38,6 +38,10 @@ void Scene::setLights(vector<Light> lights) {
 	sLights = lights;
 }
 
+void Scene::setCubemap(GLuint cubemap) {
+	sCubemap = cubemap;
+}
+
 // Getters
 Entity Scene::getTerrain() {
 	return sTerrain;
@@ -53,6 +57,10 @@ std::vector<Entity> Scene::getDecoration() {
 
 vector<Light> Scene::getLights() {
 	return sLights;
+}
+
+GLuint Scene::getCubemap() {
+	return sCubemap;
 }
 
 

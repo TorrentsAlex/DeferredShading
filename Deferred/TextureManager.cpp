@@ -26,8 +26,8 @@ GLuint TextureManager::loadTexture(std::string filePath) {
 	glBindTexture(GL_TEXTURE_2D, _texture.id);
 
 	// Set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT (usually basic wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_LINEAR);	// Set texture wrapping to GL_REPEAT (usually basic wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
 	// Set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -64,16 +64,63 @@ GLuint TextureManager::loadTexture(std::string filePath) {
 	return _texture.id;
 }
 
+GLuint TextureManager::load3DTexture(std::vector<std::string> filePath) {
+	GLTexture texture;
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glGenTextures(1, &texture.id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texture.id);
+	
+	glActiveTexture(GL_TEXTURE0);
+
+	unsigned char* image = new unsigned char();
+	for (GLuint i = 0; i < filePath.size(); i++) {
+		image = SOIL_load_image(filePath.at(i).c_str(), &texture.width, &texture.height, 0, SOIL_LOAD_RGBA);
+		if (image == NULL) {
+			std::cout << __FUNCTION__ << ":System was not able to load the following texture:" << filePath.at(i).c_str() << std::endl;
+		}
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, texture.width, texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	SOIL_free_image_data(image);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	_textureData.push_back(texture);
+	_listOfTextures.push_back(filePath.at(0));
+
+	return texture.id;
+}
+
 /**
 * Return the textureID of a texture. If the requested texture doesn't exist, it will load it
 * @param filePath is the filename of the texture
 * @return the texture ID
 */
 GLuint TextureManager::getTextureID(std::string filePath) {
+
+	// Save texture id to array
 	for (unsigned int i = 0; i < _listOfTextures.size(); i++) {
 		if (_listOfTextures[i] == filePath) {
 			return _textureData[i].id;
 		}
 	}
 	return loadTexture(filePath);
+}
+
+GLuint TextureManager::getTextureCubemapID(std::vector<std::string> filePath) {
+	for (unsigned int i = 0; i < _listOfTextures.size(); i++) {
+		if (_listOfTextures[i] == filePath.at(0)) {
+			return _textureData[i].id;
+		}
+	}
+
+	return load3DTexture(filePath);
 }

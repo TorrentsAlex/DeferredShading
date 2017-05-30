@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <tuple>
 
 //Third-party libraries
 #include <GL/glew.h>			//The OpenGL Extension Wrangler
@@ -20,7 +21,7 @@ struct GLTexture {
 class TextureManager {
 public:
 	GLuint getTextureID(std::string filePath);
-
+	GLuint getTextureCubemapID(std::vector<std::string> filePath);
 	// Pattern singleton
 	static TextureManager& Instance() {
 		static TextureManager instance;
@@ -36,7 +37,8 @@ private:
 
 
 	GLuint loadTexture(std::string filePath);
-	GLuint loadTexture3D(std::string filePath);
+	GLuint load3DTexture(std::vector<std::string> filePath);
+
 	std::vector <GLTexture> _textureData;
 	std::vector <std::string> _listOfTextures;
 };

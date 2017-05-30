@@ -336,7 +336,9 @@ int main(int argc, char** argv) {
 			GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
 			GBuffer::sendTexture(shaderPBR, "gSpec", buffSPEC, GL_TEXTURE3, 3);
 
+			GBuffer::sendCubemap(shaderPBR, "cubemap", scene->getCubemap());
 			int count = 0;
+      
 			for (Light l : scene->getLights()) {
 				GBuffer::sendUniform(shaderPBR, "lights["+ std::to_string(count) +"].type", l.getType());
 				GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].amb", l.getAmbient());

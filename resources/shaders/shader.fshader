@@ -6,6 +6,7 @@ uniform sampler2D gColor;
 uniform sampler2D gBloom;
 
 out vec4 fragColor;
+
 #define SHOULDER_STRENGTH 0.22
 #define LINEAR_STRENGTH 0.30
 #define LINEAR_ANGLE 0.10
@@ -21,6 +22,9 @@ vec4 filmic_tonemapping(vec4 x)
 }
 void main() {
   fragColor =  texture(gColor, fragUV) + texture(gBloom, fragUV);
+
+
+  fragColor = texture(gColor, fragUV) + texture(gBloom, fragUV);
 
   fragColor = filmic_tonemapping(fragColor) / filmic_tonemapping(vec4(LINEAR_WHITE_POINT_VALUE));
 

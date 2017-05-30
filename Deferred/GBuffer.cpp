@@ -212,6 +212,10 @@ void GBuffer::sendUniform(Shader shader, std::string name, glm::vec2 value) {
 }
 
 
+void GBuffer::sendCubemap(Shader shader, std::string name, GLuint texture) {
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+}
+
 void GBuffer::sendTexture(Shader shader, std::string name, GLuint texture, int TEXTURE_GL, int unit) {
 
 	GLint location = glGetUniformLocation(shader.programID, name.c_str());

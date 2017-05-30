@@ -21,6 +21,7 @@ uniform sampler2D gDiff;
 uniform sampler2D gNorm;
 uniform sampler2D gPos;
 uniform sampler2D gSpec;
+uniform samplerCube cubemap;
 
 uniform Light lights[maxlights];
 
@@ -63,7 +64,11 @@ vec4 calcColor(Light l) {
 	float NdotL = max(0.0, dot(N, L));
 
 	vec4 albedo = vec4(texture(gDiff, fragUV).rgb, 1.0);
+
+	albedo = texture(cubemap, reflect(N, V), 0.0);
+
 	float metalness = texture(gSpec, fragUV).b;
+
 	vec3 diffuse = albedo.rgb * clamp(NdotL, 0.0, 1.0) * (1.0 - metalness);
 
 	// ambient color + PBR

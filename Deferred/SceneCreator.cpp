@@ -145,10 +145,12 @@ void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 
 	//scene->setSkyBox(objSkybox, textureSkybox);
 
+
 	cout << "terrain..." << endl;
 	// Terrain
 	OBJ objTerrain = Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString());
 	GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
+
 	GLuint textureSpecular = TextureManager::Instance().getTextureID(terrain["terrain"]["specularMap"].asString());
 
 	metalMaterial.specularMap = textureSpecular;
