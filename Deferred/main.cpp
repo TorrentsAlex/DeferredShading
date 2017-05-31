@@ -215,6 +215,7 @@ void loadScene() {
 	scene = new Scene();
 	SceneCreator::Instance().createScene("../resources/scenes/scene_deferred.json", *scene);
 }
+
 void sendObject(Vertex * data, GameObject object, int numVertices) {
 	glm::mat4 modelMatrix;
 	glm::mat3 normalMatrix;
@@ -263,7 +264,11 @@ void renderScene() {
 	GBuffer::unbindVertexUnbindBuffer();
 }
 
+enum class postproces {NORMAL, CUBEMAP, PIXELATION} postpro;
+
 int main(int argc, char** argv) {
+	postpro = postproces::NORMAL;
+
 	// Initialize all objects
 	//fps.init(true, 60, false);
 	window.create("Deferred Shading Jose Suarez, Alex Torrents", screenSize.x, screenSize.y, 0);
@@ -276,7 +281,6 @@ int main(int argc, char** argv) {
 	
 	compileShaders();
 	initializeVAOVBO();
-
 
 	// Init scene
 	loadScene();
@@ -291,14 +295,23 @@ int main(int argc, char** argv) {
 		//fps.startSynchronization();
 		// UPDATE
 		// Handle inputs
-		if (InputManager::Instance().isKeyDown(SDLK_t)) {
+		if (InputManager::Instance().isKeyPressed(SDLK_t)) {
 			compileShaders();
 		}
-		if (InputManager::Instance().isKeyDown(SDLK_r)) {
+		if (InputManager::Instance().isKeyPressed(SDLK_r)) {
 			loadScene();
 		}
 		if (InputManager::Instance().handleInput() == -1) {
 			isOpen = false;
+		}
+		if (InputManager::Instance().isKeyPressed(SDLK_z)) {
+			postpro = postproces::NORMAL;
+		}
+		if (InputManager::Instance().isKeyPressed(SDLK_x)) {
+			postpro = postproces::PIXELATION;
+		}
+		if (InputManager::Instance().isKeyPressed(SDLK_c)) {
+			postpro = postproces::CUBEMAP;
 		}
 		moveCameraWithKeyboard();
 
@@ -339,8 +352,10 @@ int main(int argc, char** argv) {
 			GBuffer::sendTexture(shaderPBR, "noise", noise, GL_TEXTURE4, 4);
 
 			GBuffer::sendCubemap(shaderPBR, "cubemap", scene->getCubemap());
+			int active = postpro == postproces::CUBEMAP ? 1 : 0;
+			GBuffer::sendUniform(shaderPBR, "cubemapActive", active);
+			
 			int count = 0;
-      
 			for (Light l : scene->getLights()) {
 				GBuffer::sendUniform(shaderPBR, "lights["+ std::to_string(count) +"].type", l.getType());
 				GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].amb", l.getAmbient());
@@ -380,6 +395,8 @@ int main(int argc, char** argv) {
 
 			GBuffer::sendTexture(shaderFinal, "gAlbedo", buffALBEDO, GL_TEXTURE0, 0);
 			GBuffer::sendTexture(shaderFinal, "gBloom", buffBLOOM[1], GL_TEXTURE1, 1);
+
+			GBuffer::sendUniform(shaderFinal, "pixelation", postpro == postproces::PIXELATION ? 1 : 0);
 
 			quad.draw();
 

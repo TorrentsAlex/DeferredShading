@@ -9,7 +9,6 @@ struct Light {
 	vec3 pos;// Or direction in case of directional
 };
 
-
 in vec2 fragUV;
 
 uniform vec3 viewerPosition;
@@ -19,7 +18,11 @@ uniform sampler2D gNorm;
 uniform sampler2D gPos;
 uniform sampler2D gSpec;
 uniform sampler2D noise;
+
 uniform samplerCube cubemap;
+
+// 0 color, 1 cubemap
+uniform int cubemapActive;
 
 uniform Light lights[maxlights];
 
@@ -57,7 +60,6 @@ vec4 calcColor() {
 
 	// load textures
 	vec3 normalT = texture(gNorm, fragUV).xyz;
-	vec4 albedo = texture(gDiff, fragUV);
 
 	//r: specular, g: roughness, b: metallic
 	vec3 material = texture(gSpec, fragUV).rgb; 
@@ -66,6 +68,7 @@ vec4 calcColor() {
 	vec3 V = normalize(viewerPosition - worldPos);
 	vec3 N = normalize(normalT);
 
+	vec4 albedo = loadCubemap(N, V)  ;
 	float NdotV = max(0.0, dot(N, V));
 
 	// light
@@ -100,6 +103,9 @@ vec4 calcColor() {
 	}
 	color /= maxlights; //Knum lights
 
+	// Return only cubemaping when it's active
+	//if (cubemapActive == 1) {
+	//}
 	return vec4(color.rgb, 1.0);
 }
 
