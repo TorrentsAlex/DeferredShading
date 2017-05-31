@@ -17,7 +17,7 @@
 		"name" : "terrain",
 		"object": "../resources/objects/plane.obj",
 		"texture": "../resources/images/floor.jpg",
-		"specularMap" : "../resources/images/sphere_specular.png"
+		"specularMap" : "../resources/images/floorS.png"
 	},
 	"decoration" : [
 		{
