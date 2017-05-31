@@ -62,13 +62,13 @@ vec4 calcColor() {
 	vec3 normalT = texture(gNorm, fragUV).xyz;
 
 	//r: specular, g: roughness, b: metallic
-	vec3 material = texture(gSpec, fragUV).rgb; 
+	vec3 material = texture(gSpec, fragUV).rgb;
 	vec3 worldPos = texture(gPos, fragUV).rgb;
 
 	vec3 V = normalize(viewerPosition - worldPos);
 	vec3 N = normalize(normalT);
 
-	vec4 albedo = loadCubemap(N, V)  ;
+	vec4 albedo = texture(gDiff, fragUV);
 	float NdotV = max(0.0, dot(N, V));
 
 	// light
@@ -77,7 +77,7 @@ vec4 calcColor() {
 
 		vec3 L = l.type == 0 ? normalize(-l.pos) : normalize(l.pos - worldPos);
 		vec3 H = normalize(L + V);
-		
+
 		float VdotH = max(0.0, dot(V, H));
 		float NdotH = max(0.0, dot(N, H));
 		float NdotL = max(0.0, dot(N, L));
@@ -110,7 +110,7 @@ vec4 calcColor() {
 }
 
 void main() {
-	
+
 	lightColor = calcColor();
 
 	if (dot(lightColor.rgb, vec3(0.2126, 0.7152, 0.0722)) > 0.8) {

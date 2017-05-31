@@ -264,7 +264,7 @@ void renderScene() {
 	GBuffer::unbindVertexUnbindBuffer();
 }
 
-enum class postproces {NORMAL, CUBEMAP, PIXELATION} postpro;
+enum class postproces {NORMAL, CUBEMAP, PIXELATION, NIGHTVISION} postpro;
 
 int main(int argc, char** argv) {
 	postpro = postproces::NORMAL;
@@ -295,23 +295,28 @@ int main(int argc, char** argv) {
 		//fps.startSynchronization();
 		// UPDATE
 		// Handle inputs
-		if (InputManager::Instance().isKeyPressed(SDLK_t)) {
-			compileShaders();
-		}
-		if (InputManager::Instance().isKeyPressed(SDLK_r)) {
-			loadScene();
-		}
-		if (InputManager::Instance().handleInput() == -1) {
-			isOpen = false;
-		}
-		if (InputManager::Instance().isKeyPressed(SDLK_z)) {
-			postpro = postproces::NORMAL;
-		}
-		if (InputManager::Instance().isKeyPressed(SDLK_x)) {
-			postpro = postproces::PIXELATION;
-		}
-		if (InputManager::Instance().isKeyPressed(SDLK_c)) {
-			postpro = postproces::CUBEMAP;
+		{
+			if (InputManager::Instance().isKeyPressed(SDLK_t)) {
+				compileShaders();
+			}
+			if (InputManager::Instance().isKeyPressed(SDLK_r)) {
+				loadScene();
+			}
+			if (InputManager::Instance().handleInput() == -1) {
+				isOpen = false;
+			}
+			if (InputManager::Instance().isKeyPressed(SDLK_z)) {
+				postpro = postproces::NORMAL;
+			}
+			if (InputManager::Instance().isKeyPressed(SDLK_x)) {
+				postpro = postproces::PIXELATION;
+			}
+			if (InputManager::Instance().isKeyPressed(SDLK_c)) {
+				postpro = postproces::CUBEMAP;
+			}
+			if (InputManager::Instance().isKeyPressed(SDLK_v)) {
+				postpro = postproces::NIGHTVISION;
+			}
 		}
 		moveCameraWithKeyboard();
 
@@ -397,6 +402,7 @@ int main(int argc, char** argv) {
 			GBuffer::sendTexture(shaderFinal, "gBloom", buffBLOOM[1], GL_TEXTURE1, 1);
 
 			GBuffer::sendUniform(shaderFinal, "pixelation", postpro == postproces::PIXELATION ? 1 : 0);
+			GBuffer::sendUniform(shaderFinal, "nightVision", postpro == postproces::NIGHTVISION ? 1 : 0);
 
 			quad.draw();
 
