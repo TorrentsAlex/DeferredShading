@@ -46,6 +46,9 @@ public:
 	void setCameraFront(glm::vec3 front);
 	float getAngle();
 
+	float getFar();
+	float getNear();
+
 	void moveTo(CameraMove cm);
 	void rotate(glm::vec2 mousePos);
 

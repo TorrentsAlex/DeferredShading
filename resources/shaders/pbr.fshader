@@ -29,6 +29,13 @@ uniform Light lights[maxlights];
 out vec4 lightColor;
 out vec4 luminance;
 
+vec3 dSphereMap(vec2 n) {
+	vec4 t = vec4(n, 0.0, 0.0) * vec4(2.0, 2.0, 0.0, 0.0) + vec4(-1.0, -1.0, 1.0, -1.0);
+	t.z = dot(t.xyz, -t.xyw);
+	t.xy *= sqrt(t.z);
+	return t.xyz * vec3(2.0) + vec3(0.0, 0.0, -1.0);
+}
+
 vec4 loadCubemap(vec3 N, vec3 V) {
 	vec3 dir = reflect(N, V);
 	vec4 color = texture(cubemap, dir);
@@ -59,8 +66,8 @@ vec4 calcColor() {
 	vec4 color = vec4(0.0);
 
 	// load textures
-	vec3 normalT = texture(gNorm, fragUV).xyz;
-
+	vec3 normalT = dSphereMap(texture(gNorm, fragUV).rg);
+	float depth = texture(gNorm, fragUV).b;
 	//r: specular, g: roughness, b: metallic
 	vec3 material = texture(gSpec, fragUV).rgb;
 	vec3 worldPos = texture(gPos, fragUV).rgb;
@@ -104,9 +111,8 @@ vec4 calcColor() {
 	color /= maxlights; //Knum lights
 
 	// Return only cubemaping when it's active
-	//if (cubemapActive == 1) {
-	//}
-	return vec4(color.rgb, 1.0);
+	//color = loadCubemap(N,V);
+	return vec4(vec3(depth), 1.0);
 }
 
 void main() {

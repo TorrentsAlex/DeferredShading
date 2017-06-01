@@ -238,17 +238,15 @@ void renderScene() {
 
 	GBuffer::bindVertexArrayBindBuffer(gBVAO, gBVBO);
 
-	
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(1.0f));
 
 	for (DecorObjects decor : scene->listObjects) {
-
 		GBuffer::sendTexture(shaderGBuffer, "textureData", decor.e->getMaterial().textureMap, GL_TEXTURE0, 0);
 		if (decor.e->getMaterial().specularMap != -1) {
-			GBuffer::sendTexture(shaderGBuffer, "specularMap", decor.e->getMaterial().specularMap, GL_TEXTURE1, 1);
-			GBuffer::sendUniform(shaderGBuffer, "haveSpecularMap", true);
+			GBuffer::sendTexture(shaderGBuffer, "materialMap", decor.e->getMaterial().specularMap, GL_TEXTURE1, 1);
+			GBuffer::sendUniform(shaderGBuffer, "haveMaterialMap", true);
 		} else {
-			GBuffer::sendUniform(shaderGBuffer, "haveSpecularMap", false);
+			GBuffer::sendUniform(shaderGBuffer, "haveMaterialMap", false);
 		}
 
 		sendObject(decor.e->getMesh(), decor.g.at(0), decor.e->getNumVertices());
@@ -258,9 +256,10 @@ void renderScene() {
 
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
 	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getTerrain().getMaterial().textureMap, GL_TEXTURE0, 0);
-	GBuffer::sendTexture(shaderGBuffer, "specularMap", scene->getTerrain().getMaterial().specularMap, GL_TEXTURE1, 1);
-	GBuffer::sendUniform(shaderGBuffer, "haveSpecularMap", true);
+	GBuffer::sendTexture(shaderGBuffer, "materialMap", scene->getTerrain().getMaterial().specularMap, GL_TEXTURE1, 1);
+	GBuffer::sendUniform(shaderGBuffer, "haveMaterialMap", true);
 	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
+
 	GBuffer::unbindVertexUnbindBuffer();
 }
 
@@ -289,6 +288,13 @@ int main(int argc, char** argv) {
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
 	GLuint noise = TextureManager::Instance().getTextureID("../resources/images/noise.png");
+	
+	// variables for Depth in space 
+	const float cam_far = camera.getFar();
+	const float cam_near = camera.getNear();
+
+	const float a = (cam_far + cam_near) / (cam_far - cam_near);
+	const float b = 2.0f * cam_far * cam_near / (cam_far - cam_near);
 
 	bool isOpen = true;
 	while (isOpen) {
@@ -333,6 +339,8 @@ int main(int argc, char** argv) {
 			// send camera to opengl
 			GBuffer::sendUniform(shaderGBuffer, "viewMatrix", camera.getViewMatrix());
 			GBuffer::sendUniform(shaderGBuffer, "projectionMatrix", camera.getProjectionCamera());
+			GBuffer::sendUniform(shaderGBuffer, "viewerPosition", camera.getPosition());
+			GBuffer::sendUniform(shaderGBuffer, "ab", glm::vec2(a, b));
 
 			// Send objects
 			renderScene();
@@ -357,8 +365,8 @@ int main(int argc, char** argv) {
 			GBuffer::sendTexture(shaderPBR, "noise", noise, GL_TEXTURE4, 4);
 
 			GBuffer::sendCubemap(shaderPBR, "cubemap", scene->getCubemap());
-			int active = postpro == postproces::CUBEMAP ? 1 : 0;
-			GBuffer::sendUniform(shaderPBR, "cubemapActive", active);
+			
+			GBuffer::sendUniform(shaderPBR, "cubemapActive", postpro == postproces::CUBEMAP ? 1 : 0);
 			
 			int count = 0;
 			for (Light l : scene->getLights()) {

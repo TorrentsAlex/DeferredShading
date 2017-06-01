@@ -79,6 +79,14 @@ float Camera::getAngle() {
 	return cAngle;
 }
 
+float Camera::getFar() {
+	return cFar;
+}
+
+float Camera::getNear() {
+	return cNear;
+}
+
 void Camera::rotate(glm::vec2 mousePos) {
 	mousePos = (mousePos / cScreenSize) * 2.0f -1.0f;
 	glm::vec2 diff = (mousePos - prevMouse) * 2.5f;
