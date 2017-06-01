@@ -318,9 +318,6 @@ int main(int argc, char** argv) {
 				postpro = postproces::PIXELATION;
 			}
 			if (InputManager::Instance().isKeyPressed(SDLK_c)) {
-				postpro = postproces::CUBEMAP;
-			}
-			if (InputManager::Instance().isKeyPressed(SDLK_v)) {
 				postpro = postproces::NIGHTVISION;
 			}
 		}

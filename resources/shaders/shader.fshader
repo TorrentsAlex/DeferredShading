@@ -29,8 +29,8 @@ void main() {
 		uv = floor(fragUV * vec2(100.0)) / vec2(100.0);
 	}
 
-	fragColor = texture(gColor, uv);// + texture(gBloom, uv);
-	//fragColor = filmic_tonemapping(fragColor) / filmic_tonemapping(vec4(LINEAR_WHITE_POINT_VALUE));
+	fragColor = texture(gColor, uv) + texture(gBloom, uv);
+	fragColor = filmic_tonemapping(fragColor) / filmic_tonemapping(vec4(LINEAR_WHITE_POINT_VALUE));
 
   // Night pass
   if (nightVision == 1) {

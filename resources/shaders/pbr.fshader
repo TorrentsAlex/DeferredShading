@@ -110,9 +110,9 @@ vec4 calcColor() {
 	}
 	color /= maxlights; //Knum lights
 
-	// Return only cubemaping when it's active
-	//color = loadCubemap(N,V);
-	return vec4(vec3(depth), 1.0);
+	// Uncomment if you wanna see the cubemap implemented
+	//color = loadCubemap(N, V);
+	return vec4(color.rgb, 1.0);
 }
 
 void main() {
