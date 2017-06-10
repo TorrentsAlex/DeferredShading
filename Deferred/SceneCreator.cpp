@@ -137,6 +137,7 @@ void SceneCreator::populateDecoration(Scene * scene, Json::Value decoration) {
 
 
 void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
+	Json::Reader reader;
 
 	//cout << "skybox..." << endl;
 	// Terrain
@@ -156,14 +157,42 @@ void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 		GLuint cmId = TextureManager::Instance().getTextureCubemapID(cubemapsPaths);
 		scene->setCubemap(cmId);
 	}
-	// Terrain
-	OBJ objTerrain = Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString());
-	GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
 
-	GLuint textureSpecular = TextureManager::Instance().getTextureID(terrain["terrain"]["specularMap"].asString());
+	std::string name = terrain["terrain"]["name"].asString();
+	// Water
+	if (name.compare("water") == 0) {
+		OBJ waterOBJ = (Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString()));
+		GLuint textureWater = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
+		Material waterMaterial;
+		waterMaterial.textureMap = textureWater;
+		
+		Json::Value JSWaves = terrain["terrain"]["waves"];
+		std::vector<Wave> waves;
+		for (int i = 0; i < JSWaves.size(); i++) {
+			Json::Value JsWave;
+			reader.parse(FileReader::LoadStringFromFile(JSWaves[i].asString()), JsWave);
+			Wave w;
+			w.A = JsWave["amplitude"].asFloat();
+			w.o = JsWave["frequency"].asFloat();
+			w.K = glm::vec3(
+				JsWave["direction"]["x"].asFloat(),
+				JsWave["direction"]["y"].asFloat(),
+				JsWave["direction"]["z"].asFloat());
+			w.k = JsWave["wavelength"].asFloat();
+			waves.push_back(w);
+		}
 
-	metalMaterial.specularMap = textureSpecular;
-	scene->setTerrain(objTerrain, textureTerrain, metalMaterial);
+		scene->setWater(waterOBJ, waterMaterial, waves);
+		
+	} else {
+		// Terrain
+		OBJ objTerrain = Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString());
+		GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
 
+		GLuint textureSpecular = TextureManager::Instance().getTextureID(terrain["terrain"]["specularMap"].asString());
+
+		metalMaterial.specularMap = textureSpecular;
+		scene->setTerrain(objTerrain, textureTerrain, metalMaterial);
+	}
 	metalMaterial.specularMap = -1;
 }

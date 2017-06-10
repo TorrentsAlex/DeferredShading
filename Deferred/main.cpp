@@ -5,7 +5,7 @@
 //
 #include "Camera.h"
 #include "Window.h"
-//#include "FPSLimiter.h"
+#include "FPSLimiter.h"
 #include "Scene.h"
 #include "SceneCreator.h"
 #include "InputManager.h"
@@ -17,7 +17,7 @@
 const glm::vec2 screenSize = {1020, 900};
 //
 Camera camera;
-//FPSLimiter fps;
+FPSLimiter fps;
 Window window;
 
 Shader shaderGBuffer;
@@ -213,7 +213,7 @@ void loadScene() {
 		delete scene;
 	}
 	scene = new Scene();
-	SceneCreator::Instance().createScene("../resources/scenes/scene_deferred.json", *scene);
+	SceneCreator::Instance().createScene("../resources/scenes/water.json", *scene);
 }
 
 void sendObject(Vertex * data, GameObject object, int numVertices) {
@@ -237,7 +237,7 @@ void sendObject(Vertex * data, GameObject object, int numVertices) {
 void renderScene() {
 
 	GBuffer::bindVertexArrayBindBuffer(gBVAO, gBVBO);
-
+	
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(1.0f));
 
 	for (DecorObjects decor : scene->listObjects) {
@@ -253,12 +253,12 @@ void renderScene() {
 		
 		GBuffer::unbindTextures();
 	}
-
+	
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
-	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getTerrain().getMaterial().textureMap, GL_TEXTURE0, 0);
-	GBuffer::sendTexture(shaderGBuffer, "materialMap", scene->getTerrain().getMaterial().specularMap, GL_TEXTURE1, 1);
+	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getWater().getMaterial().textureMap, GL_TEXTURE0, 0);
+	GBuffer::sendTexture(shaderGBuffer, "materialMap", scene->getWater().getMaterial().specularMap, GL_TEXTURE1, 1);
 	GBuffer::sendUniform(shaderGBuffer, "haveMaterialMap", true);
-	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
+	sendObject(scene->getWater().getMesh(), scene->getWater().getGameObject(), scene->getWater().getNumVertices());
 
 	GBuffer::unbindVertexUnbindBuffer();
 }
@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
 	postpro = postproces::NORMAL;
 
 	// Initialize all objects
-	//fps.init(true, 60, false);
+	fps.init(true, 60, false);
 	window.create("Deferred Shading Jose Suarez, Alex Torrents", screenSize.x, screenSize.y, 0);
 	InputManager::Instance().init();
 
@@ -287,7 +287,6 @@ int main(int argc, char** argv) {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
-	GLuint noise = TextureManager::Instance().getTextureID("../resources/images/noise.png");
 	
 	// variables for Depth in space 
 	const float cam_far = camera.getFar();
@@ -298,8 +297,9 @@ int main(int argc, char** argv) {
 
 	bool isOpen = true;
 	while (isOpen) {
-		//fps.startSynchronization();
+		fps.startSynchronization();
 		// UPDATE
+		scene->update(fps.getDeltaTime());
 		// Handle inputs
 		{
 			if (InputManager::Instance().isKeyPressed(SDLK_t)) {
@@ -336,8 +336,6 @@ int main(int argc, char** argv) {
 			// send camera to opengl
 			GBuffer::sendUniform(shaderGBuffer, "viewMatrix", camera.getViewMatrix());
 			GBuffer::sendUniform(shaderGBuffer, "projectionMatrix", camera.getProjectionCamera());
-			GBuffer::sendUniform(shaderGBuffer, "viewerPosition", camera.getPosition());
-			GBuffer::sendUniform(shaderGBuffer, "ab", glm::vec2(a, b));
 
 			// Send objects
 			renderScene();
@@ -359,7 +357,6 @@ int main(int argc, char** argv) {
 			GBuffer::sendTexture(shaderPBR, "gNorm", buffNOR, GL_TEXTURE1, 1);
 			GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
 			GBuffer::sendTexture(shaderPBR, "gSpec", buffSPEC, GL_TEXTURE3, 3);
-			GBuffer::sendTexture(shaderPBR, "noise", noise, GL_TEXTURE4, 4);
 
 			GBuffer::sendCubemap(shaderPBR, "cubemap", scene->getCubemap());
 			
@@ -413,6 +410,7 @@ int main(int argc, char** argv) {
 
 			GBuffer::unuse(shaderFinal);
 		}
+		fps.forceSynchronization();
 		window.swapBuffer();
 	}
 

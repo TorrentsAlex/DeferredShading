@@ -69,5 +69,29 @@ void Scene::clean() {
 }
 
 //
-void Scene::update() {
+void Scene::update(float dt) {
+//	water.update(dt);
+}
+
+void Scene::setWater(OBJ object, Material material, std::vector<Wave> waves) {
+	GameObject gameO;
+	gameO.angle = 0;
+	gameO.translate = glm::vec3(0.0f, 0.0f, 0.0f);
+	gameO.scale = glm::vec3(1.0f, 1.0f, 1.0f);
+	gameO.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+	
+	water.setId("water");
+
+	water.setOBJ(object);
+	water.setMaterial(material);
+	water.setGameObject(gameO);
+
+	for (Wave w : waves) {
+		water.addWave(w);
+	}
+	water.setup();
+}
+
+Entity Scene::getWater() {
+	return water;
 }

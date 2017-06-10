@@ -1,0 +1,10 @@
+{
+    "amplitude" : 0.01,
+    "frequency" : 1.2,
+    "direction": {
+        "x" : 0.5,
+        "y":  0.0,
+        "z":  0.5
+    },
+    "wavelength" : 2.0
+}

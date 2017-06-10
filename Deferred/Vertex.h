@@ -9,6 +9,7 @@ struct Position {
 	GLfloat  x;
 	GLfloat  y;
 	GLfloat  z;
+	glm::vec3 toVec3() { return glm::vec3(x,y,z); };
 };
 
 struct NormalVector {

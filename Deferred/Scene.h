@@ -2,6 +2,7 @@
 #define TURRI_SCENE
 
 #include "Entity.h"
+#include "Water.h"
 
 #include "Light.h"
 #include <vector>
@@ -22,6 +23,7 @@ private:
 
 	vector<Light> sLights;
 	GLuint sCubemap;
+	Water water;
 
 public:
 	Scene();
@@ -42,8 +44,11 @@ public:
 	vector<Light> getLights();
 	GLuint getCubemap();
 
+	void setWater(OBJ object, Material material, std::vector<Wave> waves);
+	Entity getWater();
+
 	void clean();
-	void update();
+	void update(float dt);
 };
 
 #endif
