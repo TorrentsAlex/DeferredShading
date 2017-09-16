@@ -18,7 +18,7 @@
 
 #include <iostream>
 
-const glm::vec2 screenSize = {1900, 1080};
+const glm::vec2 screenSize = {900, 800};
 //
 Camera camera;
 FPSLimiter fps;
@@ -548,6 +548,7 @@ int main(int argc, char** argv) {
 
 void moveCameraWithKeyboard() {
 	// Rotate the camera with mouse
+	if (InputManager::Instance().isKeyDown(SDLK_LCTRL))
 	if (InputManager::Instance().mousePressed()) {
 		camera.rotate(InputManager::Instance().getMouseCoords());
 	}
