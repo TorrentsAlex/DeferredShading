@@ -52,6 +52,8 @@ int Window::create(string windowName, int screenWidth, int screenHeight, unsigne
 
 	//Create a SDL window centered into the middle of the screen
 	_sdlWindow = SDL_CreateWindow(windowName.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _screenWidth, _screenHeight, flags);
+	
+	SDL_SetWindowPosition(_sdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	//Check for errors
 	if (_sdlWindow == nullptr) {
 		std::cout << "Window.cpp:59: " << "SDL Window could not be created!" << std::endl;
