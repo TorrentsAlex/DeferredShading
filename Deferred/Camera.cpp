@@ -99,25 +99,25 @@ void Camera::rotate(glm::vec2 mousePos) {
 void Camera::moveTo(CameraMove cm) {
 	switch (cm) {
 	case  CameraMove::forward:
-		setCameraPosition(cCameraPos += glm::normalize(cCameraFront)* 0.05f);
+		setCameraPosition(cCameraPos += glm::normalize(cCameraFront)* cameraVelocity);
 	break;
 	case  CameraMove::backwards:
-		setCameraPosition(cCameraPos -= glm::normalize(cCameraFront)* 0.05f);
+		setCameraPosition(cCameraPos -= glm::normalize(cCameraFront)*cameraVelocity);
 	break;
 	case  CameraMove::left:
-		cCameraPos -= glm::normalize(glm::cross(cCameraFront, cCameraUp)) * 0.05f;
+		cCameraPos -= glm::normalize(glm::cross(cCameraFront, cCameraUp)) * cameraVelocity;
 		setCameraPosition(cCameraPos);
 	break;
 	case  CameraMove::right:
-		cCameraPos += glm::normalize(glm::cross(cCameraFront, cCameraUp))* 0.05f;
+		cCameraPos += glm::normalize(glm::cross(cCameraFront, cCameraUp))* cameraVelocity;
 		setCameraPosition(cCameraPos);
 	break;
 	case  CameraMove::up:
-		cCameraPos += cCameraUp* 0.05f;
+		cCameraPos += cCameraUp* cameraVelocity;
 		setCameraPosition(cCameraPos);
 	break;
 	case  CameraMove::down:
-		cCameraPos -= cCameraUp* 0.05f;
+		cCameraPos -= cCameraUp*cameraVelocity;
 		setCameraPosition(cCameraPos);
 	break;
 	case CameraMove::none:

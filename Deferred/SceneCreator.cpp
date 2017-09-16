@@ -99,15 +99,18 @@ void SceneCreator::populateDecoration(Scene * scene, Json::Value decoration) {
 	for (auto i = 0; i < size; i++) {
 		Json::Value currentDecoration = jsonDecoration[i];
 		OBJ objDecoration = Geometry::LoadModelFromFile(currentDecoration["object"].asString());
-		GLuint textureDecoration = TextureManager::Instance().getTextureID(currentDecoration["texture"].asString());
+		//GLuint textureDecoration = TextureManager::Instance().getTextureID(currentDecoration["texture"].asString());
 
 		string gameElements = currentDecoration["elements"].asString();
 		string textureSpecularString = currentDecoration["specularMap"].asString();
 
+		// Add atlas texture
+		metalMaterial.textureAtlas = currentDecoration["texture_atlas"].asInt();
+
 		Entity* e = new Entity();
 		e->setOBJ(objDecoration);
 		e->setMaterial(metalMaterial);
-		e->setTextureId(textureDecoration);
+		e->setTextureId(-1);
 
 		e->setId(currentDecoration["name"].asString());
 		DecorObjects d;
@@ -115,8 +118,8 @@ void SceneCreator::populateDecoration(Scene * scene, Json::Value decoration) {
 
 		//set specular material
 		if (textureSpecularString.compare("") != 0) {
-			GLuint specular = TextureManager::Instance().getTextureID(textureSpecularString);
-			e->setTextureSpecular(specular);
+			//GLuint specular = TextureManager::Instance().getTextureID(textureSpecularString);
+			e->setTextureSpecular(-1);
 		}
 
 		GameObject gameObject;
@@ -158,12 +161,12 @@ void SceneCreator::populateTerrain(Scene * scene, Json::Value terrain) {
 	}
 	// Terrain
 	OBJ objTerrain = Geometry::LoadModelFromFile(terrain["terrain"]["object"].asString());
-	GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
+	//GLuint textureTerrain = TextureManager::Instance().getTextureID(terrain["terrain"]["texture"].asString());
 
-	GLuint textureSpecular = TextureManager::Instance().getTextureID(terrain["terrain"]["specularMap"].asString());
+	//GLuint textureSpecular = TextureManager::Instance().getTextureID(terrain["terrain"]["specularMap"].asString());
 
-	metalMaterial.specularMap = textureSpecular;
-	scene->setTerrain(objTerrain, textureTerrain, metalMaterial);
+	metalMaterial.textureAtlas = terrain["terrain"]["texture_atlas"].asInt();
+	scene->setTerrain(objTerrain, -1, metalMaterial);
 
 	metalMaterial.specularMap = -1;
 }

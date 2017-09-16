@@ -10,14 +10,22 @@ struct Light {
 };
 
 in vec2 fragUV;
+in vec3 positionVS;
+
 
 uniform vec3 viewerPosition;
+// matrix for reconstruct position with depth
+uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
+uniform vec2 ab;
 
 uniform sampler2D gDiff;
 uniform sampler2D gNorm;
 uniform sampler2D gPos;
 uniform sampler2D gSpec;
-uniform sampler2D noise;
+
+uniform sampler2D albedoAtlas;
+uniform sampler2D materialAtlas;
 
 uniform samplerCube cubemap;
 
@@ -33,7 +41,8 @@ vec3 dSphereMap(vec2 n) {
 	vec4 t = vec4(n, 0.0, 0.0) * vec4(2.0, 2.0, 0.0, 0.0) + vec4(-1.0, -1.0, 1.0, -1.0);
 	t.z = dot(t.xyz, -t.xyw);
 	t.xy *= sqrt(t.z);
-	return t.xyz * vec3(2.0) + vec3(0.0, 0.0, -1.0);
+	t =  vec4(t.xyz * vec3(2.0) + vec3(0.0, 0.0, -1.0), 1.0);
+	return t.xyz;
 }
 
 vec4 loadCubemap(vec3 N, vec3 V) {
@@ -48,11 +57,11 @@ vec3 fresnel(float VdotH, vec3 c) {
 	return c + (1.0 - c) * pow(1.0 - VdotH, 5.0);
 }
 
-float dBeckmann(float NdotH, float roughness) {
+float dGGX(float NdotH, float roughness) {
 	float a2 = pow(roughness, 4);
 	float nd = NdotH * NdotH;
 
-	float d = nd * (a2 -1.0) + 1.0;
+	float d = nd * (a2 - 1.0) + 1.0;
 	d = PI * d * d;
 	return a2 / d;
 }
@@ -65,17 +74,18 @@ float gCookTorrance(float NdotV, float VdotH, float NdotH) {
 vec4 calcColor() {
 	vec4 color = vec4(0.0);
 
+	vec2 uvAtlas = texture(gDiff, fragUV).xy;
 	// load textures
 	vec3 normalT = dSphereMap(texture(gNorm, fragUV).rg);
-	float depth = texture(gNorm, fragUV).b;
 	//r: specular, g: roughness, b: metallic
-	vec3 material = texture(gSpec, fragUV).rgb;
+	vec3 material = texture(materialAtlas, uvAtlas).rgb;
+	vec4 albedo = texture(albedoAtlas, uvAtlas);
+
 	vec3 worldPos = texture(gPos, fragUV).rgb;
 
 	vec3 V = normalize(viewerPosition - worldPos);
 	vec3 N = normalize(normalT);
 
-	vec4 albedo = texture(gDiff, fragUV);
 	float NdotV = max(0.0, dot(N, V));
 
 	// light
@@ -92,8 +102,8 @@ vec4 calcColor() {
 		vec3 diffuse = albedo.rgb * clamp(NdotL, 0.0, 1.0) * (1.0 - material.b);
 
 		// ambient color + PBR
-		vec3 nom = fresnel(VdotH, vec3(1.0)) *
-							 dBeckmann(NdotH, material.g) *
+		vec3 nom = fresnel(NdotV, vec3(0.4, 0.5, 0.5)) *
+							 dGGX(NdotH, material.g) *
 							 gCookTorrance(NdotV, VdotH, NdotH);
 
 		vec3 specular = ((1.0 - material.b) + material.b * albedo.rgb) * (nom / 4.0 * NdotV * NdotL);
@@ -108,18 +118,17 @@ vec4 calcColor() {
 		}
 		color.rgb += l.amb * (diffuse + specular) * attenuation;
 	}
-	color /= maxlights; //Knum lights
 
 	// Uncomment if you wanna see the cubemap implemented
 	//color = loadCubemap(N, V);
-	return vec4(color.rgb, 1.0);
+	return vec4(color.xyz, 1.0);
 }
 
 void main() {
 
 	lightColor = calcColor();
 
-	if (dot(lightColor.rgb, vec3(0.2126, 0.7152, 0.0722)) > 0.8) {
+	if (dot(lightColor.rgb, vec3(0.2126, 0.7152, 0.0722)) > 1.5) {
 		luminance = vec4(lightColor.rgb, 1.0);
 	}
 }

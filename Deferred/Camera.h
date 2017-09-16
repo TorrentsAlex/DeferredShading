@@ -33,6 +33,8 @@ private:
 	glm::vec2 rotation;
 	glm::vec2 prevMouse;
 
+	float cameraVelocity = 0.5f;
+
 public:
 	Camera();
 	Camera(Camera& c);

@@ -20,6 +20,8 @@ struct Material {
 	glm::vec3 direction;
 	glm::vec3 position;
 
+	int textureAtlas = -1;
+
 	GLuint textureMap;
 	GLuint normalMap = -1;
 	GLuint specularMap = -1;

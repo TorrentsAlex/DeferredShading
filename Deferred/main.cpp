@@ -2,22 +2,26 @@
 
 #include <gl/glew.h>
 
+#include <imgui\imgui.h>
+#include <imgui\imgui_impl_sdl_gl3.h>
+
 //
 #include "Camera.h"
 #include "Window.h"
-//#include "FPSLimiter.h"
+#include "FPSLimiter.h"
 #include "Scene.h"
 #include "SceneCreator.h"
 #include "InputManager.h"
 #include "TextureManager.h"
 #include "GBuffer.h"
+#include "Timeline.h"
 
 #include <iostream>
 
-const glm::vec2 screenSize = {1020, 900};
+const glm::vec2 screenSize = {1900, 1080};
 //
 Camera camera;
-//FPSLimiter fps;
+FPSLimiter fps;
 Window window;
 
 Shader shaderGBuffer;
@@ -33,6 +37,9 @@ GLuint frameBuffer;
 GLuint buffNOR, buffDIF, buffPOS, buffSPEC;
 GLuint depthBuffer;
 
+// texture atlas
+GLuint albedoAtlas;
+GLuint materialAtlas;
 
 // Lighting Pass
 GLuint lihgtingBuffer, buffALBEDO, buffLUMINANCE;
@@ -93,11 +100,10 @@ void initializeVAOVBO() {
 		GBuffer::genTexture(&buffDIF, GL_COLOR_ATTACHMENT0, screenSize);
 		GBuffer::genTexture(&buffNOR, GL_COLOR_ATTACHMENT1, screenSize);
 		GBuffer::genTexture(&buffPOS, GL_COLOR_ATTACHMENT2, screenSize);
-		GBuffer::genTexture(&buffSPEC, GL_COLOR_ATTACHMENT3, screenSize);
 
-		GLuint attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
+		GLuint attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
 
-		GBuffer::closeGBufferAndDepth(4, attachments, &depthBuffer, screenSize);
+		GBuffer::closeGBufferAndDepth(3, attachments, &depthBuffer, screenSize);
 
 		// LightingPass 
 		{
@@ -234,42 +240,70 @@ void sendObject(Vertex * data, GameObject object, int numVertices) {
 	GBuffer::sendDataToGPU(data, numVertices);
 }
 
+
 void renderScene() {
+	glm::vec2 atlasOffset = glm::vec2(0.0);
 
 	GBuffer::bindVertexArrayBindBuffer(gBVAO, gBVBO);
 
+
+	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
+	int index = scene->getTerrain().getMaterial().textureAtlas;
+	int column = index % 2; // This 2 is the number of rows
+	int row = index / 2;
+	atlasOffset.x = (float)column / 2.0f;
+	atlasOffset.y = (float)row / 2.0f;
+	GBuffer::sendUniform(shaderGBuffer, "atlasOffset", atlasOffset);
+
+
+	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
 	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(1.0f));
 
 	for (DecorObjects decor : scene->listObjects) {
-		GBuffer::sendTexture(shaderGBuffer, "textureData", decor.e->getMaterial().textureMap, GL_TEXTURE0, 0);
-		if (decor.e->getMaterial().specularMap != -1) {
-			GBuffer::sendTexture(shaderGBuffer, "materialMap", decor.e->getMaterial().specularMap, GL_TEXTURE1, 1);
-			GBuffer::sendUniform(shaderGBuffer, "haveMaterialMap", true);
-		} else {
-			GBuffer::sendUniform(shaderGBuffer, "haveMaterialMap", false);
-		}
+		index = decor.e->getMaterial().textureAtlas;
+		column = index % 2; // This 2 is the number of rows
+		row = index / 2;
+		atlasOffset.x = (float)column / 2.0f;
+		atlasOffset.y = (float)row / 2.0f;
+
+		GBuffer::sendUniform(shaderGBuffer, "indexAtlas", decor.e->getMaterial().textureAtlas);
+		GBuffer::sendUniform(shaderGBuffer, "atlasOffset", atlasOffset);
 
 		sendObject(decor.e->getMesh(), decor.g.at(0), decor.e->getNumVertices());
 		
 		GBuffer::unbindTextures();
 	}
 
-	GBuffer::sendUniform(shaderGBuffer, "textureScaleFactor", glm::vec2(10.0f));
-	GBuffer::sendTexture(shaderGBuffer, "textureData", scene->getTerrain().getMaterial().textureMap, GL_TEXTURE0, 0);
-	GBuffer::sendTexture(shaderGBuffer, "materialMap", scene->getTerrain().getMaterial().specularMap, GL_TEXTURE1, 1);
-	GBuffer::sendUniform(shaderGBuffer, "haveMaterialMap", true);
-	sendObject(scene->getTerrain().getMesh(), scene->getTerrain().getGameObject(), scene->getTerrain().getNumVertices());
 
 	GBuffer::unbindVertexUnbindBuffer();
 }
 
 enum class postproces {NORMAL, CUBEMAP, PIXELATION, NIGHTVISION} postpro;
+#define IM_ARRAYSIZE(_ARR)  ((int)(sizeof(_ARR)/sizeof(*_ARR)))
+float tt = 0.f;
+static float linearTimeValue[121] = { 0.0f };
+static float curveTimeValue[121] = { 0.0f };
+
+void GUI() {
+
+	ImGui::Text("Hello ImGui!!");
+	ImGui::SliderFloat("float", &tt, 1.0f, 10.0f);
+
+	ImGui::PlotLines("linear movement", linearTimeValue, IM_ARRAYSIZE(linearTimeValue), 0, "", 0.0f, 1.0f, ImVec2(0, 80));
+	ImGui::PlotLines("curve movement", curveTimeValue, IM_ARRAYSIZE(curveTimeValue), 0, "", 0.0f, 1.0f, ImVec2(0, 160));
+
+}
+
+template<class T>
+T lerp(T a, T b, float alpha) {
+	return (1.0f - alpha)*a + alpha * b;
+}
 
 int main(int argc, char** argv) {
 	postpro = postproces::NORMAL;
 
 	// Initialize all objects
-	//fps.init(true, 60, false);
+	fps.init(true, 60, false);
 	window.create("Deferred Shading Jose Suarez, Alex Torrents", screenSize.x, screenSize.y, 0);
 	InputManager::Instance().init();
 
@@ -287,7 +321,17 @@ int main(int argc, char** argv) {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
-	GLuint noise = TextureManager::Instance().getTextureID("../resources/images/noise.png");
+	
+	// Load atlas texture
+	albedoAtlas = TextureManager::Instance().getTextureID("../resources/images/albedo.png");
+	materialAtlas = TextureManager::Instance().getTextureID("../resources/images/material2.png");
+	GLuint van = TextureManager::Instance().getTextureID("../resources/images/van.jpg");
+
+	glm::vec3 vStartSphereLinear = glm::vec3(-40.0f, 25.0f, 25.0f);
+	glm::vec3 vStartSphereCurve = glm::vec3(-40.0f, 25.0f, 50.0f);
+
+	glm::vec3 vEndSphereLinear = glm::vec3(40.0f, 25.0f, 25.0f);
+	glm::vec3 vEndSphereCurve = glm::vec3(40.0f, 25.0f, 50.0f);
 	
 	// variables for Depth in space 
 	const float cam_far = camera.getFar();
@@ -295,11 +339,80 @@ int main(int argc, char** argv) {
 
 	const float a = (cam_far + cam_near) / (cam_far - cam_near);
 	const float b = 2.0f * cam_far * cam_near / (cam_far - cam_near);
-
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+	glEnable(GL_MULTISAMPLE);
 	bool isOpen = true;
+	Timeline timeLinearUp(0);
+	timeLinearUp.setDesiredTime(2.0f);
+	timeLinearUp.setValues(0.0f, 1.0f);
+
+	Timeline timeLinearDown(0);
+	timeLinearDown.setDesiredTime(2.0f);
+	timeLinearDown.setValues(1.0f, 0.0f);
+
+	Timeline timeCurveUp(1);
+	timeCurveUp.setDesiredTime(2.0f);
+	timeCurveUp.setValues(0.0f, 1.0f);
+
+	Timeline timeCurveDown(2);
+	timeCurveDown.setDesiredTime(2.0f);
+	timeCurveDown.setValues(1.0f, 0.0f);
+
+
+	// IMGUI INIT
+	std::string imInit = ImGui_ImplSdlGL3_Init(window.getWindow()) ? "true"  : "false";
+	std::cout << "Imgui Init " << imInit << std::endl;
+
+	int linearLoop = 0;
+	int curveLoop = 0;
 	while (isOpen) {
-		//fps.startSynchronization();
+		fps.startSynchronization();
+		ImGui_ImplSdlGL3_NewFrame(window.getWindow());
+		GUI();
 		// UPDATE
+		timeLinearUp.update(fps.getDeltaTime());
+		timeLinearDown.update(fps.getDeltaTime());
+
+		timeCurveUp.update(fps.getDeltaTime());
+		timeCurveDown.update(fps.getDeltaTime());
+		//
+		if (timeLinearUp.isRunning()) {
+			float linearValue = timeLinearUp.getValue();
+			if (linearLoop < 121) {
+				linearTimeValue[linearLoop] = linearValue;
+				linearLoop++;
+			}
+			glm::vec3 posInterPolated = lerp(vStartSphereLinear, vEndSphereLinear, linearValue);
+			scene->listObjects.at(0).g.at(0).translate = posInterPolated;
+		}
+		if (timeLinearUp.isFinished()) { 
+			linearLoop = 0;
+		}
+	
+		if (timeLinearDown.isRunning()) {
+			float linearValue = timeLinearDown.getValue();
+			glm::vec3 posInterPolated = lerp(vStartSphereLinear, vEndSphereLinear, linearValue);
+			scene->listObjects.at(0).g.at(0).translate = posInterPolated;
+		}
+
+		if (timeCurveUp.isRunning()) {
+			float linearValue = timeCurveUp.getValue();
+			if (curveLoop < 121) {
+				curveTimeValue[curveLoop] = linearValue;
+				curveLoop++;
+			}
+			glm::vec3 posInterPolated = lerp(vStartSphereCurve, vEndSphereCurve, linearValue);
+			scene->listObjects.at(2).g.at(0).translate = posInterPolated;
+		}	
+		if (timeCurveUp.isFinished()) {
+			curveLoop = 0;
+		}
+		if (timeCurveDown.isRunning()) {
+			float linearValue = timeCurveDown.getValue();
+			glm::vec3 posInterPolated = lerp(vStartSphereCurve, vEndSphereCurve, linearValue);
+			scene->listObjects.at(2).g.at(0).translate = posInterPolated;
+		}
+
 		// Handle inputs
 		{
 			if (InputManager::Instance().isKeyPressed(SDLK_t)) {
@@ -312,15 +425,19 @@ int main(int argc, char** argv) {
 				isOpen = false;
 			}
 			if (InputManager::Instance().isKeyPressed(SDLK_z)) {
-				postpro = postproces::NORMAL;
+				timeLinearUp.playFromStart();
+				timeCurveUp.playFromStart();
 			}
 			if (InputManager::Instance().isKeyPressed(SDLK_x)) {
-				postpro = postproces::PIXELATION;
+				timeLinearDown.playFromStart();
+				timeCurveDown.playFromStart();
 			}
 			if (InputManager::Instance().isKeyPressed(SDLK_c)) {
 				postpro = postproces::NIGHTVISION;
 			}
 		}
+
+		
 		moveCameraWithKeyboard();
 
 		// Geometry pass
@@ -355,11 +472,15 @@ int main(int argc, char** argv) {
 			GBuffer::use(shaderPBR);
 
 			GBuffer::sendUniform(shaderPBR, "viewerPosition", camera.getPosition());
+			GBuffer::sendUniform(shaderPBR, "projectionMatrix", camera.getProjectionCamera());
+			GBuffer::sendUniform(shaderPBR, "viewMatrix", camera.getViewMatrix());
+			GBuffer::sendUniform(shaderPBR, "ab", glm::vec2(a, b));
 			GBuffer::sendTexture(shaderPBR, "gDiff", buffDIF, GL_TEXTURE0, 0);
 			GBuffer::sendTexture(shaderPBR, "gNorm", buffNOR, GL_TEXTURE1, 1);
 			GBuffer::sendTexture(shaderPBR, "gPos", buffPOS, GL_TEXTURE2, 2);
-			GBuffer::sendTexture(shaderPBR, "gSpec", buffSPEC, GL_TEXTURE3, 3);
-			GBuffer::sendTexture(shaderPBR, "noise", noise, GL_TEXTURE4, 4);
+			GBuffer::sendTexture(shaderPBR, "albedoAtlas", albedoAtlas, GL_TEXTURE4, 4);
+			GBuffer::sendTexture(shaderPBR, "materialAtlas", materialAtlas, GL_TEXTURE5, 5);
+			GBuffer::sendTexture(shaderPBR, "vangogh", van, GL_TEXTURE6, 6);
 
 			GBuffer::sendCubemap(shaderPBR, "cubemap", scene->getCubemap());
 			
@@ -413,11 +534,14 @@ int main(int argc, char** argv) {
 
 			GBuffer::unuse(shaderFinal);
 		}
+
+		ImGui::Render();
+
 		window.swapBuffer();
+		fps.forceSynchronization();
 	}
-
+	ImGui_ImplSdlGL3_Shutdown();
 	delete scene;
-
 	return 1;
 }
 

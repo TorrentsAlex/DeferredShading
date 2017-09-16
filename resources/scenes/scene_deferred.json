@@ -16,41 +16,57 @@
 	"terrain": {
 		"name" : "terrain",
 		"object": "../resources/objects/plane.obj",
+		"texture_atlas" : 3,
 		"texture": "../resources/images/floor.jpg",
 		"specularMap" : "../resources/images/floorS.png"
 	},
 	"decoration" : [
 		{
-			"name" : "teapot",
-			"object" : "../resources/objects/teapot.obj",
-			"texture" : "../resources/images/cup.jpg",
-			"specularMap" : "../resources/images/teapot_specular.png",
+			"name" : "sphere",
+			"object" : "../resources/objects/sphere.obj",
+			"texture_atlas" : 1,
+			"texture" : "../resources/images/red.png",
+			"specularMap" : "../resources/images/sphere_specular.png",
 			"position": {
 				"x" : -40,
-				"y" : 0,
-				"z" : 0
+				"y" : 25,
+				"z" : 25
 			}
 		},
 		{
 			"name" : "lamp",
 			"object" : "../resources/objects/lamp.obj",
+			"texture_atlas" : 0,
 			"texture" : "../resources/images/lantern.png",
 			"specularMap" : "../resources/images/lanternS.png",
 			"position": {
 				"x" : 26,
 				"y" : 0,
-				"z" : 0
+				"z" : -50
 			}
 		},
 		{
 			"name" : "sphere",
 			"object" : "../resources/objects/sphere.obj",
+			"texture_atlas" : 2,
 			"texture" : "../resources/images/red.png",
 			"specularMap" : "../resources/images/sphere_specular.png",
 			"position": {
-				"x" : 0,
+				"x" : -40,
 				"y" : 25,
 				"z" : 50
+			}
+		},
+		{
+			"name" : "lamp",
+			"object" : "../resources/objects/teapot.obj",
+			"texture_atlas" : 1,
+			"texture" : "../resources/images/teapot.png",
+			"specularMap" : "../resources/images/teapot_specular.png",
+			"position": {
+				"x" : -26,
+				"y" : 0,
+				"z" : -50
 			}
 		}
 	],
