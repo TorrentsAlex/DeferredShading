@@ -2,6 +2,9 @@
 
 #include <gl/glew.h>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_sdl_gl3.h>
+
 //
 #include "Camera.h"
 #include "Window.h"
@@ -265,6 +268,40 @@ void renderScene() {
 
 enum class postproces {NORMAL, CUBEMAP, PIXELATION, NIGHTVISION} postpro;
 
+glm::vec3 directionalColor = { 0.0, 1.0, 0.0 };
+float dColor[] = {0.0, 1.0, 0.0};
+void GUI() {
+
+	ImGui::Text("Hello ImGui!!");
+	if (ImGui::SliderFloat3("color", dColor, 0.0f, 1.0f)) {
+		directionalColor = glm::vec3(dColor[0], dColor[1], dColor[2]);
+	}
+
+	// posProces
+
+	static int e = 0;
+	ImGui::Text("PostProces");
+	ImGui::RadioButton("normal", &e, 0);
+	ImGui::RadioButton("cubemap", &e, 1);
+	ImGui::RadioButton("pixelation", &e, 2);
+	ImGui::RadioButton("night vision", &e, 3);
+
+	switch (e) {
+	case 0:
+		postpro = postproces::NORMAL;
+		break;
+	case 1:
+		postpro = postproces::CUBEMAP;
+		break;
+	case 2:
+		postpro = postproces::PIXELATION;
+		break;
+	case 3:
+		postpro = postproces::NIGHTVISION;
+		break;
+	}
+}
+
 int main(int argc, char** argv) {
 	postpro = postproces::NORMAL;
 
@@ -288,7 +325,11 @@ int main(int argc, char** argv) {
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_ALPHA_TEST);
 	GLuint noise = TextureManager::Instance().getTextureID("../resources/images/noise.png");
-	
+
+	// IMGUI INIT
+	std::string imInit = ImGui_ImplSdlGL3_Init(window.getWindow()) ? "true" : "false";
+	std::cout << "Imgui Init " << imInit << std::endl;
+
 	// variables for Depth in space 
 	const float cam_far = camera.getFar();
 	const float cam_near = camera.getNear();
@@ -301,6 +342,10 @@ int main(int argc, char** argv) {
 		//fps.startSynchronization();
 		// UPDATE
 		// Handle inputs
+
+		ImGui_ImplSdlGL3_NewFrame(window.getWindow());
+		GUI();
+
 		{
 			if (InputManager::Instance().isKeyPressed(SDLK_t)) {
 				compileShaders();
@@ -311,18 +356,11 @@ int main(int argc, char** argv) {
 			if (InputManager::Instance().handleInput() == -1) {
 				isOpen = false;
 			}
-			if (InputManager::Instance().isKeyPressed(SDLK_z)) {
-				postpro = postproces::NORMAL;
-			}
-			if (InputManager::Instance().isKeyPressed(SDLK_x)) {
-				postpro = postproces::PIXELATION;
-			}
-			if (InputManager::Instance().isKeyPressed(SDLK_c)) {
-				postpro = postproces::NIGHTVISION;
+			if (InputManager::Instance().isKeyDown(SDLK_LCTRL)) {
+				moveCameraWithKeyboard();
 			}
 		}
-		moveCameraWithKeyboard();
-
+		
 		// Geometry pass
 		{
 			// Frame buffer for GBuffer
@@ -368,7 +406,11 @@ int main(int argc, char** argv) {
 			int count = 0;
 			for (Light l : scene->getLights()) {
 				GBuffer::sendUniform(shaderPBR, "lights["+ std::to_string(count) +"].type", l.getType());
-				GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].amb", l.getAmbient());
+				if (l.getType() == LIGHT_DIRECTIONAL) {
+					GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].amb", directionalColor);
+				} else {
+					GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].amb", l.getAmbient());
+				}
 				GBuffer::sendUniform(shaderPBR, "lights[" + std::to_string(count) + "].pos", l.getPosition());
 				++count;
 			}
@@ -413,8 +455,10 @@ int main(int argc, char** argv) {
 
 			GBuffer::unuse(shaderFinal);
 		}
+		ImGui::Render();
 		window.swapBuffer();
 	}
+	ImGui_ImplSdlGL3_Shutdown();
 
 	delete scene;
 
