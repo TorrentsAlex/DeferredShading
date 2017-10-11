@@ -21,11 +21,12 @@ protected:
 	glm::vec3 lSpecular;
 
 	glm::vec3 lDirection;
-	glm::vec3 lPosition;
 
 	float lPower;
 
 public:
+	glm::vec3 lPosition;
+
 	Light();
 	Light(glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular);
 	Light(glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, glm::vec3 direction, glm::vec3 position);

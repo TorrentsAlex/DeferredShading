@@ -20,12 +20,12 @@ private:
 	/* Variable deprecated, using DecorObjects for render */
 	vector<Entity> sDecoration;
 
-	vector<Light> sLights;
 	GLuint sCubemap;
 
 public:
 	Scene();
 	~Scene();
+	vector<Light> sLights;
 
 	vector<DecorObjects> listObjects;
 	// Setters
