@@ -191,6 +191,10 @@ void GBuffer::sendUniform(Shader shader, std::string name, int value) {
 	glUniform1i(glGetUniformLocation(shader.programID, name.c_str()), value);
 }
 
+void GBuffer::sendUniform(Shader shader, std::string name, float value) {
+	glUniform1f(glGetUniformLocation(shader.programID, name.c_str()), value);
+}
+
 void GBuffer::sendUniform(Shader shader, std::string name, bool boolean) {
 	glUniform1i(glGetUniformLocation(shader.programID, name.c_str()), boolean ? 1 : 0);
 }

@@ -49,6 +49,7 @@ public:
 	static void unbindVertexUnbindBuffer();
 
 	static void sendUniform(Shader shader, std::string name, int value);
+	static void sendUniform(Shader shader, std::string name, float value);
 
 	static void sendUniform(Shader shader, std::string name, bool boolean);
 	static void sendUniform(Shader shader, std::string name, glm::vec3 vec3);
