@@ -108,10 +108,9 @@ vec4 calcColor() {
 		}
 		color.rgb += l.amb * (diffuse + specular) * attenuation;
 	}
-	color /= maxlights; //Knum lights
 
 	// Uncomment if you wanna see the cubemap implemented
-	//color = loadCubemap(N, V);
+	if (cubemapActive == 1) color *= loadCubemap(N, V);
 	return vec4(color.rgb, 1.0);
 }
 

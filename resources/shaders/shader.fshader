@@ -8,6 +8,8 @@ uniform sampler2D gBloom;
 uniform int pixelation;
 uniform int nightVision;
 
+uniform float vignneting_radious;
+
 out vec4 fragColor;
 
 #define SHOULDER_STRENGTH 0.22
@@ -33,10 +35,10 @@ void main() {
 	fragColor = filmic_tonemapping(fragColor) / filmic_tonemapping(vec4(LINEAR_WHITE_POINT_VALUE));
 
   // Night pass
-  if (nightVision == 1) {
-    fragColor *= vec4(0.40, 0.79, 0.11, 1.0);
+  //if (nightVision == 1) {
+    //fragColor *= vec4(0.40, 0.79, 0.11, 1.0);
     vec2 p = vec2(0.5) - uv;
     vec2 dist = abs(p -(p/vec2(2.0)));
-    fragColor -= vec4(length(dist)) * 0.5;
-  }
+    fragColor -= vec4(length(dist)) * vignneting_radious;
+  //}
 }
