@@ -17,6 +17,9 @@
 
 #include <iostream>
 
+
+#define IM_ARRAYSIZE(_ARR)  ((int)(sizeof(_ARR)/sizeof(*_ARR)))
+
 const glm::vec2 screenSize = {1020, 900};
 //
 Camera camera;
@@ -35,7 +38,6 @@ GLuint gBVAO, gBVBO;
 GLuint frameBuffer;
 GLuint buffNOR, buffDIF, buffPOS, buffSPEC;
 GLuint depthBuffer;
-
 
 // Lighting Pass
 GLuint lihgtingBuffer, buffALBEDO, buffLUMINANCE;
@@ -270,21 +272,21 @@ enum class postproces {NORMAL, CUBEMAP, PIXELATION, NIGHTVISION} postpro;
 
 glm::vec3 directionalColor = { 0.0, 1.0, 0.0 };
 float dColor[] = {0.0, 1.0, 0.0};
-void GUI() {
+float dPos[];
 
-	ImGui::Text("Hello ImGui!!");
-	if (ImGui::SliderFloat3("color", dColor, 0.0f, 1.0f)) {
+float vignneting_radious = 0.5f;
+void GUI() {
+	if (ImGui::ColorEdit3("color", dColor)) {
 		directionalColor = glm::vec3(dColor[0], dColor[1], dColor[2]);
 	}
 
-	// posProces
+	ImGui::SliderFloat3("direction", (float*)&scene->sLights[0].lPosition, -1.0f, 1.0f);
 
+	ImGui::SliderFloat("viggneting", &vignneting_radious,  0.0f, 5.0f);
+	// posProces
+	const char* list_postpro[] = {"normal", "cubemap","pixelation", "night vision" };
 	static int e = 0;
-	ImGui::Text("PostProces");
-	ImGui::RadioButton("normal", &e, 0);
-	ImGui::RadioButton("cubemap", &e, 1);
-	ImGui::RadioButton("pixelation", &e, 2);
-	ImGui::RadioButton("night vision", &e, 3);
+	ImGui::Combo("postproces", &e, list_postpro, IM_ARRAYSIZE(list_postpro));
 
 	switch (e) {
 	case 0:
@@ -300,6 +302,8 @@ void GUI() {
 		postpro = postproces::NIGHTVISION;
 		break;
 	}
+
+
 }
 
 int main(int argc, char** argv) {
@@ -450,6 +454,7 @@ int main(int argc, char** argv) {
 
 			GBuffer::sendUniform(shaderFinal, "pixelation", postpro == postproces::PIXELATION ? 1 : 0);
 			GBuffer::sendUniform(shaderFinal, "nightVision", postpro == postproces::NIGHTVISION ? 1 : 0);
+			GBuffer::sendUniform(shaderFinal, "vignneting_radious", vignneting_radious);
 
 			quad.draw();
 
